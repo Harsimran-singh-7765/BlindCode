@@ -1,159 +1,177 @@
-# Turborepo starter
+# BlindCode Arena
 
-This Turborepo starter is maintained by the Turborepo core team.
+BlindCode Arena is a **controlled blind coding competition platform** designed for lab-based environments.
+It introduces a **blurred code editor mechanic** that limits visual clarity while coding, encouraging participants to rely on structured thinking, memory discipline, and intentional code design rather than constant visual scanning and trial-and-error debugging.
 
-## Using this example
+The platform combines a **desktop coding client (Tauri)**, a **backend API**, and an **admin monitoring dashboard** to create a complete competition environment suitable for college contests, lab assessments, and interview simulations.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+# Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Repository Setup](#repository-setup)
+- [Project Structure](#project-structure)
+- [Running the Project](#running-the-project)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+# Prerequisites
+
+Make sure the following tools are installed before setting up the project.
+
+### Node.js
+
+Install Node.js (recommended: LTS).
+
+### pnpm
+
+Package manager used in this monorepo.
+
+```bash
+npm install -g pnpm
 ```
 
-## What's inside?
+### Rust (required for Tauri)
 
-This Turborepo includes the following packages/apps:
+Install Rust using `winget`:
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+winget install Rustlang.Rustup
 ```
 
-Without global `turbo`, use your package manager:
+After installation verify:
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+rustc --version
+cargo --version
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### Microsoft Visual Studio Build Tools
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Required for compiling the Tauri Rust backend.
 
-```sh
-turbo build --filter=docs
+Install via:
+
+```bash
+winget install Microsoft.VisualStudio.2022.BuildTools
 ```
 
-Without global `turbo`:
+During installation select:
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```
+Desktop development with C++
 ```
 
-### Develop
+### Git
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+```bash
+git --version
 ```
 
-Without global `turbo`, use your package manager:
+---
 
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+# Repository Setup
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Apoorv012/BlindCode.git
+cd BlindCode
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Install dependencies for the entire monorepo:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
+```bash
+pnpm install
 ```
 
-Without global `turbo`:
+---
 
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+# Project Structure
+
+The project is organized as a **Turborepo monorepo**.
+
+```
+BlindCode
+│
+├─ apps
+│  ├─ desktop    # Tauri desktop coding client
+│  ├─ api        # Express backend API
+│  └─ admin      # Admin monitoring dashboard
+│
+├─ packages
+│  ├─ ui                 # Shared UI components
+│  ├─ eslint-config      # Shared ESLint configuration
+│  └─ typescript-config  # Shared TypeScript configuration
+│
+├─ turbo.json
+└─ pnpm-workspace.yaml
 ```
 
-### Remote Caching
+Details about the system components are available here:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+➡️ - [docs/applications.md](docs/applications.md)
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+---
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+# Running the Project
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Start backend and admin services:
 
-```sh
-cd my-turborepo
-turbo login
+```bash
+pnpm dev
 ```
 
-Without global `turbo`, use your package manager:
+This launches:
 
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+* API server
+* Admin dashboard
+
+To run the desktop application:
+
+```bash
+pnpm tauri
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+This launches the **BlindCode desktop client** using Tauri.
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+# Contributing
 
-```sh
-turbo link
+Contributions are welcome.
+
+If you would like to contribute:
+
+1. Fork the repository
+2. Create a new feature branch
+
+```
+git checkout -b feature/your-feature
 ```
 
-Without global `turbo`:
+3. Make your changes
+4. Commit clearly
 
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+```
+git commit -m "Add: meaningful feature description"
 ```
 
-## Useful Links
+5. Push to your fork and open a pull request
 
-Learn more about the power of Turborepo:
+Before submitting a PR, please ensure:
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+* the project builds successfully
+* linting passes
+* code follows the repository style conventions
+
+For major changes or architectural decisions, it is recommended to **open an issue first to discuss the proposal**.
+
+---
+
+# License
+
+License information will be added soon.
