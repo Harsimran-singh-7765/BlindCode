@@ -1,11 +1,17 @@
+export interface TestCase {
+    input: string;
+    expected: string;
+}
+
 export interface Challenge {
     id: number;
     title: string;
     description: string;
-    expectedOutput: string;
+    expectedOutput: string; // Ise baad mein deprecate kar sakte ho, ab testCases use honge
     timeLimit: number;
     difficulty: "easy" | "medium" | "hard" | "insane";
     starterCode: Record<string, string>;
+    testCases: TestCase[]; // NAYA
 }
 
 export const CHALLENGES: Challenge[] = [
@@ -16,6 +22,11 @@ export const CHALLENGES: Challenge[] = [
         expectedOutput: "Hello, World!",
         timeLimit: 120,
         difficulty: "easy",
+        testCases: [
+            { input: "", expected: "Hello, World!" },
+            { input: "ignore me", expected: "Hello, World!" },
+            { input: "123", expected: "Hello, World!" }
+        ],
         starterCode: {
             cpp: `#include <iostream>
 using namespace std;
@@ -34,109 +45,167 @@ int main() {
     {
         id: 2,
         title: "Sum of Two",
-        description: "Print the sum of 10 and 20 (should output: 30)",
+        description: "Read two numbers from standard input separated by a space or newline and print their sum.",
         expectedOutput: "30",
         timeLimit: 180,
         difficulty: "easy",
+        testCases: [
+            { input: "10 20", expected: "30" },
+            { input: "50 50", expected: "100" },
+            { input: "-5 15", expected: "10" }
+        ],
         starterCode: {
             cpp: `#include <iostream>
 using namespace std;
 
 int main() {
-    int a = 10;
-    int b = 20;
-    // Print the sum of a and b
-    
+    int a, b;
+    // Read from standard input
+    if (cin >> a >> b) {
+        // Print the sum of a and b
+        
+    }
     return 0;
 }`,
-            python: `a = 10
-b = 20
-# Print the sum of a and b
+            python: `import sys
+# Read from standard input
+input_data = sys.stdin.read().split()
+if len(input_data) >= 2:
+    a = int(input_data[0])
+    b = int(input_data[1])
+    # Print the sum of a and b
 `,
-            javascript: `const a = 10;
-const b = 20;
-// Print the sum of a and b
+            javascript: `const fs = require('fs');
+// Read from standard input
+const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);
+if (input.length >= 2) {
+    const a = parseInt(input[0]);
+    const b = parseInt(input[1]);
+    // Print the sum of a and b
+    
+}
 `,
         },
     },
     {
         id: 3,
         title: "Countdown",
-        description: "Print numbers from 5 to 1 (each on new line)",
+        description: "Read a number N from input. Print numbers from N down to 1 (each on a new line).",
         expectedOutput: "5\n4\n3\n2\n1",
         timeLimit: 240,
         difficulty: "medium",
+        testCases: [
+            { input: "5", expected: "5\n4\n3\n2\n1" },
+            { input: "3", expected: "3\n2\n1" },
+            { input: "1", expected: "1" }
+        ],
         starterCode: {
             cpp: `#include <iostream>
 using namespace std;
 
 int main() {
-    // Print 5 to 1, each on a new line
-    
+    int n;
+    if (cin >> n) {
+        // Print N to 1, each on a new line
+        
+    }
     return 0;
 }`,
-            python: `# Print 5 to 1, each on a new line
+            python: `import sys
+input_data = sys.stdin.read().split()
+if input_data:
+    n = int(input_data[0])
+    # Print N to 1, each on a new line
 `,
-            javascript: `// Print 5 to 1, each on a new line
+            javascript: `const fs = require('fs');
+const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);
+if (input[0]) {
+    const n = parseInt(input[0]);
+    // Print N to 1, each on a new line
+    
+}
 `,
         },
     },
     {
         id: 4,
         title: "Factorial",
-        description: "Print the factorial of 5 (should output: 120)",
+        description: "Read a number N and print its factorial.",
         expectedOutput: "120",
         timeLimit: 300,
         difficulty: "medium",
+        testCases: [
+            { input: "5", expected: "120" },
+            { input: "3", expected: "6" },
+            { input: "0", expected: "1" },
+            { input: "6", expected: "720" }
+        ],
         starterCode: {
             cpp: `#include <iostream>
 using namespace std;
 
 int main() {
-    int n = 5;
-    // Calculate and print factorial of n
-    
+    int n;
+    if (cin >> n) {
+        // Calculate and print factorial of n
+        
+    }
     return 0;
 }`,
-            python: `n = 5
-# Calculate and print factorial of n
+            python: `import sys
+input_data = sys.stdin.read().split()
+if input_data:
+    n = int(input_data[0])
+    # Calculate and print factorial of n
 `,
-            javascript: `const n = 5;
-// Calculate and print factorial of n
+            javascript: `const fs = require('fs');
+const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);
+if (input[0]) {
+    const n = parseInt(input[0]);
+    // Calculate and print factorial of n
+    
+}
 `,
         },
     },
     {
         id: 5,
         title: "FizzBuzz Single",
-        description: "For n=15, print 'FizzBuzz' (divisible by both 3 and 5)",
+        description: "Read a number N. Print 'FizzBuzz' if divisible by 3 and 5, 'Fizz' if only by 3, 'Buzz' if only by 5, else the number itself.",
         expectedOutput: "FizzBuzz",
         timeLimit: 300,
         difficulty: "hard",
+        testCases: [
+            { input: "15", expected: "FizzBuzz" },
+            { input: "9", expected: "Fizz" },
+            { input: "10", expected: "Buzz" },
+            { input: "7", expected: "7" }
+        ],
         starterCode: {
             cpp: `#include <iostream>
 using namespace std;
 
 int main() {
-    int n = 15;
-    // If n is divisible by 3 and 5, print "FizzBuzz"
-    // If only by 3, print "Fizz"
-    // If only by 5, print "Buzz"
-    // Else print the number
-    
+    int n;
+    if (cin >> n) {
+        // Implement FizzBuzz logic here
+        
+    }
     return 0;
 }`,
-            python: `n = 15
-# If n is divisible by 3 and 5, print "FizzBuzz"
-# If only by 3, print "Fizz"
-# If only by 5, print "Buzz"
-# Else print the number
+            python: `import sys
+input_data = sys.stdin.read().split()
+if input_data:
+    n = int(input_data[0])
+    # Implement FizzBuzz logic here
 `,
-            javascript: `const n = 15;
-// If n is divisible by 3 and 5, print "FizzBuzz"
-// If only by 3, print "Fizz"
-// If only by 5, print "Buzz"
-// Else print the number
+            javascript: `const fs = require('fs');
+const input = fs.readFileSync(0, 'utf-8').trim().split(/\\s+/);
+if (input[0]) {
+    const n = parseInt(input[0]);
+    // Implement FizzBuzz logic here
+    
+}
 `,
         },
     },

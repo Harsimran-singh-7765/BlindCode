@@ -110,16 +110,7 @@ export default function Editor({
     };
 
     const getLevelBackground = () => {
-        switch (level) {
-            case 1:
-                return "bg-[#1e1e1e]";
-            case 2:
-                return "bg-gradient-to-br from-[#1e1e1e] to-[#1a1a2e]";
-            case 3:
-                return "bg-gradient-to-br from-[#1e1e1e] via-[#16213e] to-[#0f3460]";
-            default:
-                return "bg-[#1e1e1e]";
-        }
+        return "bg-[#1e1e1e]";
     };
 
     const currentLang = LANGUAGES.find((l) => l.id === language) || LANGUAGES[0];
@@ -181,7 +172,7 @@ export default function Editor({
                         </div>
                     )}
 
-                    <button
+                    {/* <button
                         onClick={onVision}
                         disabled={visionTimeLeft > 0}
                         className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 text-base font-semibold ${visionTimeLeft > 0
@@ -191,9 +182,9 @@ export default function Editor({
                     >
                         {isBlurred ? <Eye size={20} /> : <EyeOff size={20} />}
                         <span>Vision</span>
-                    </button>
+                    </button> */}
 
-                    <button
+                    {/* <button
                         onClick={onRun}
                         disabled={isCompiling}
                         className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 text-base font-semibold ${isCompiling
@@ -203,6 +194,31 @@ export default function Editor({
                     >
                         <Play size={20} fill="currentColor" />
                         <span>{isCompiling ? "Compiling..." : "Run Code"}</span>
+                    </button> */}
+
+                    <button
+                        onClick={onRun}
+                        disabled={isCompiling}
+                        className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 text-base font-semibold ${isCompiling
+                            ? "bg-[#3c3c3c] text-[#858585] cursor-not-allowed"
+                            : "bg-[#2d2d2d] hover:bg-[#3d3d3d] border border-[#4c4c4c] text-white hover:scale-105"
+                            }`}
+                    >
+                        <Play size={20} fill="currentColor" className={isCompiling ? "opacity-50" : "text-green-400"} />
+                        <span>{isCompiling ? "Running..." : "Run Code"}</span>
+                    </button>
+
+                    {/* NEW SUBMIT BUTTON */}
+                    <button
+                        onClick={onSubmit}
+                        disabled={isCompiling}
+                        className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all duration-300 text-base font-semibold shadow-lg ${isCompiling
+                            ? "bg-[#3c3c3c] text-[#858585] cursor-not-allowed"
+                            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white hover:scale-105 shadow-blue-500/25"
+                            }`}
+                    >
+                        <Send size={20} />
+                        <span>{isCompiling ? "Evaluating..." : "Submit"}</span>
                     </button>
                 </div>
             </div>
@@ -239,9 +255,9 @@ export default function Editor({
                     />
 
                     {/* Atmospheric Overlays (Gradients and Droplets) */}
-                    {isBlurred && (
+                    {/* {isBlurred && (
                         <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
-                            {/* Note: Global backdropFilter is removed here so dynamic line blur works */}
+
                             <div
                                 className="absolute inset-0"
                                 style={{
@@ -284,7 +300,7 @@ export default function Editor({
                                 <span>Use Vision to see clearly</span>
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </div>
             </div>
 

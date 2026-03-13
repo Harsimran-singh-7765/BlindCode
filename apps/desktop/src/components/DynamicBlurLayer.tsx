@@ -26,19 +26,20 @@ export default function DynamicBlurLayer({ code, isBlurred, currentLine, level }
 
                     let normalBlur = 0;
                     if (distanceFromBottom > 1) {
-                        const maxBlur = Math.min(level * 3 + 2, 15);
+                        // FIX: Removed 'level' multiplier. Set a fixed, reasonable max blur (e.g., 5px)
+                        const maxBlur = 5;
                         normalBlur = Math.min((distanceFromBottom - 1) * 1.5, maxBlur);
                     }
 
                     // 2. The Partial Reveal Logic
                     if (index === currentLine && distanceFromBottom > 1) {
-                        // If they click this specific line, reduce the normal blur by half (e.g. 50% -> 25%)
+                        // If they click this specific line, reduce the normal blur by half
                         blurAmount = normalBlur * 0.4;
                     } else if (Math.abs(currentLine - index) === 1 && distanceFromBottom > 1) {
-                        // Lines immediately immediately above/below the cursor get slightly reduced blur too
+                        // Lines immediately above/below the cursor get slightly reduced blur too
                         blurAmount = normalBlur * 0.75;
                     } else {
-                        // Otherwise, apply the full heavy blur
+                        // Otherwise, apply the normal blur
                         blurAmount = normalBlur;
                     }
                 }

@@ -235,8 +235,6 @@ export default function App() {
             setIsCompiling(false);
         }
     };
-
-    // OFFICIAL SUBMISSION - Grades code and updates Sidebar tab
     const handleSubmit = async () => {
         if (isCompiling) return;
 
@@ -245,33 +243,66 @@ export default function App() {
         setSubmissionData({ status: "idle", message: "Evaluating your code..." });
         addLog("🚀 Submitting code for evaluation...");
 
-        try {
-            const result = await compileCode(code, language);
+        const testCases = currentChallenge.testCases || [];
+        let allPassed = true;
+        let passedCount = 0;
+        const testResults = []; // NAYA: Sab test cases ka result store karenge
 
-            if (result.error || result.hasError) {
-                setSubmissionData({
-                    status: "error",
-                    message: "Compilation or Runtime Error. Check the terminal logs for details.",
-                });
-                addLog(`❌ Submission failed: Compilation/Runtime Error.`);
-                return;
+        try {
+            for (let i = 0; i < testCases.length; i++) {
+                const tc = testCases[i];
+                addLog(`⏳ Running Test Case ${i + 1}/${testCases.length}...`);
+
+                // Har test case ke liye input bhej kar code run karna
+                const result = await compileCode(code, language, tc.input);
+
+                if (result.error || result.hasError) {
+                    allPassed = false;
+                    testResults.push({
+                        input: tc.input,
+                        expected: tc.expected,
+                        actual: result.output || result.error || "Runtime Error",
+                        status: "error"
+                    });
+                    addLog(`❌ Test Case ${i + 1} Failed: Compilation/Runtime Error.`);
+                    break; // Error aane par aage ke tests run mat karo
+                }
+
+                const actualOutput = result.output.trim();
+                const expectedOutput = tc.expected.trim();
+
+                if (actualOutput === expectedOutput) {
+                    passedCount++;
+                    testResults.push({
+                        input: tc.input, expected: tc.expected, actual: actualOutput, status: "passed"
+                    });
+                    addLog(`✅ Test Case ${i + 1} Passed`);
+                } else {
+                    allPassed = false;
+                    testResults.push({
+                        input: tc.input, expected: tc.expected, actual: actualOutput, status: "failed"
+                    });
+                    addLog(`❌ Test Case ${i + 1} Failed: Wrong Answer.`);
+                }
             }
 
-            const actualOutput = result.output.trim();
-            const expectedOutput = currentChallenge.expectedOutput.trim();
-
-            if (actualOutput === expectedOutput) {
+            if (allPassed) {
                 const timeTaken = Math.floor((Date.now() - levelStartTime) / 1000);
                 const levelScore = calculateScore(timeTaken, peekCount, currentChallenge.difficulty);
 
                 setScore((prev) => prev + levelScore);
+
+                // NAYA: Extended submission data
                 setSubmissionData({
                     status: "accepted",
                     message: "All test cases passed! Outstanding work.",
                     score: levelScore,
                     time: timeTaken,
                     peeks: peekCount,
-                });
+                    testResults: testResults,
+                    passedCount,
+                    totalCount: testCases.length
+                } as any); // "as any" temporary hai Phase 3 tak
 
                 addLog(`✅ SUBMISSION ACCEPTED: +${levelScore} pts`);
 
@@ -285,19 +316,21 @@ export default function App() {
             } else {
                 setSubmissionData({
                     status: "rejected",
-                    message: "Your output did not match the expected output.",
-                    actual: actualOutput,
-                    expected: expectedOutput,
-                });
-                addLog(`❌ SUBMISSION REJECTED: Wrong Answer.`);
+                    message: `Passed ${passedCount} out of ${testCases.length} test cases.`,
+                    testResults: testResults,
+                    passedCount,
+                    totalCount: testCases.length
+                } as any);
+                addLog(`❌ SUBMISSION REJECTED: Failed some test cases.`);
             }
         } catch (error) {
-            setSubmissionData({ status: "error", message: "Failed to connect to compiler service." });
+            setSubmissionData({ status: "error", message: "Failed to connect to compiler service." } as any);
             addLog("❌ Failed to connect to compiler service");
         } finally {
             setIsCompiling(false);
         }
     };
+
 
     const handleNextLevel = () => {
         setShowLevelComplete(false);
