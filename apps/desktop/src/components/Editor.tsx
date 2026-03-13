@@ -1,5 +1,6 @@
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Play, Eye, EyeOff, X, ChevronDown, Code2 } from "lucide-react";
+import CodeWorkspace from "./CodeWorkspace"; // <-- Import the new component
 
 interface EditorProps {
     code: string;
@@ -44,7 +45,6 @@ export default function Editor({
     onLanguageChange,
     isCompiling,
 }: EditorProps) {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [lineCount, setLineCount] = useState(1);
     const [showLangMenu, setShowLangMenu] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; selectedText: string } | null>(null);
@@ -125,6 +125,7 @@ export default function Editor({
 
     return (
         <div className={`h-full flex flex-col ${getLevelBackground()} transition-all duration-500 overflow-hidden`}>
+            {/* Top Bar (Language, Player Info, Action Buttons) */}
             <div className="flex items-center justify-between px-6 py-2.5 bg-[#252526] border-b border-[#3c3c3c] shrink-0">
                 <div className="flex items-center gap-5">
                     <div className="relative">
@@ -205,13 +206,16 @@ export default function Editor({
                 </div>
             </div>
 
+            {/* Breadcrumb / File Tab */}
             <div className="flex items-center gap-3 px-6 py-2 bg-[#1e1e1e] border-b border-[#3c3c3c] text-sm text-[#858585] shrink-0">
                 <span>src</span>
                 <ChevronDown size={14} className="rotate-[-90deg]" />
                 <span className="text-white">main{currentLang.extension}</span>
             </div>
 
+            {/* Main Editor Area */}
             <div className="flex-1 flex overflow-hidden relative">
+                {/* Line Numbers */}
                 <div className="w-12 bg-[#1e1e1e] flex flex-col items-end pr-3 pt-4 text-[#6e6e6e] text-xs font-mono select-none border-r border-[#3c3c3c] shrink-0">
                     {Array.from({ length: lineCount }, (_, i) => (
                         <div key={i} className="leading-6 h-6">
@@ -220,29 +224,23 @@ export default function Editor({
                     ))}
                 </div>
 
-                <div className="flex-1 relative overflow-hidden">
-                    <textarea
-                        ref={textareaRef}
-                        value={code}
-                        onChange={(e) => onCodeChange(e.target.value)}
+                {/* The new CodeWorkspace handles the textarea and dynamic blur */}
+                <div className="flex-1 relative overflow-hidden flex">
+                    <CodeWorkspace
+                        code={code}
+                        onCodeChange={onCodeChange}
+                        isBlurred={isBlurred}
+                        level={level}
+                        currentLang={currentLang}
                         onPaste={handlePaste}
                         onCopy={handleCopy}
                         onContextMenu={handleContextMenu}
-                        className="absolute inset-0 w-full h-full resize-none bg-transparent p-4 font-mono text-sm leading-6 focus:outline-none z-10 transition-all duration-300"
-                        style={{
-                            caretColor: "#ffcc00",
-                            color: isBlurred ? "rgba(212, 212, 212, 0.15)" : "#d4d4d4",
-                            textShadow: isBlurred ? "0 0 8px rgba(212, 212, 212, 0.3)" : "none",
-                        }}
-                        spellCheck={false}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        placeholder={`// Start typing your ${currentLang.name} code here...`}
                     />
 
+                    {/* Atmospheric Overlays (Gradients and Droplets) */}
                     {isBlurred && (
                         <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                            {/* Note: Global backdropFilter is removed here so dynamic line blur works */}
                             <div
                                 className="absolute inset-0"
                                 style={{
@@ -255,7 +253,6 @@ export default function Editor({
                       rgba(30, 30, 30, 0.4) 100%
                     )
                   `,
-                                    backdropFilter: `blur(${Math.min(level * 3 + 2, 15)}px)`,
                                 }}
                             />
 
