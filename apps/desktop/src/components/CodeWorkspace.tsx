@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import DynamicBlurLayer from "./DynamicBlurLayer";
+import Editor, { type Monaco, type OnMount } from "@monaco-editor/react";
 
 interface CodeWorkspaceProps {
     code: string;
@@ -22,73 +22,118 @@ export default function CodeWorkspace({
     onCopy,
     onContextMenu,
 }: CodeWorkspaceProps) {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const backgroundRef = useRef<HTMLDivElement>(null);
-    const [currentLine, setCurrentLine] = useState(0);
+    const editorRef = useRef<any>(null);
+    const monacoRef = useRef<Monaco | null>(null);
+    const [currentLine, setCurrentLine] = useState<number>(0);
+    const decorationsRef = useRef<string[]>([]);
 
-    // Sync scrolling between the invisible textarea and the visual background
-    const handleScroll = () => {
-        if (textareaRef.current && backgroundRef.current) {
-            backgroundRef.current.scrollTop = textareaRef.current.scrollTop;
-            backgroundRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    const handleEditorDidMount: OnMount = (editor, monaco) => {
+        editorRef.current = editor;
+        monacoRef.current = monaco;
+
+        // Track cursor position
+        editor.onDidChangeCursorPosition((e: any) => {
+            // Monaco lines are 1-indexed, we want 0-indexed to match computation logic
+            setCurrentLine(e.position.lineNumber - 1);
+        });
+
+        // Initialize cursor line
+        const pos = editor.getPosition();
+        if (pos) {
+            setCurrentLine(pos.lineNumber - 1);
         }
     };
 
-    // Calculate which line the cursor is currently on
-    const updateCursorLine = () => {
-        if (textareaRef.current) {
-            const cursorPosition = textareaRef.current.selectionStart;
-            const textBeforeCursor = code.substring(0, cursorPosition);
-            const lineIndex = textBeforeCursor.split("\n").length - 1;
-            setCurrentLine(lineIndex);
+    const handleEditorChange = (value: string | undefined) => {
+        if (value !== undefined) {
+            onCodeChange(value);
         }
     };
 
-    // Recalculate if the code changes externally or on mount
+    // Calculate and apply line blurs
     useEffect(() => {
-        updateCursorLine();
-    }, [code]);
+        if (!editorRef.current || !monacoRef.current) return;
+
+        const editor = editorRef.current;
+        const model = editor.getModel();
+        if (!model) return;
+
+        const lineCount = model.getLineCount();
+        const newDecorations: any[] = [];
+        for (let i = 0; i < lineCount; i++) {
+            let blurAmount = 0;
+
+            if (isBlurred) {
+                if (i === currentLine) {
+                    blurAmount = 0;
+                } else {
+                    blurAmount = 5;
+                }
+            }
+
+            // Quantize blur to nearest bin (0 to 5)
+            const quantizedBlur = Math.min(5, Math.max(0, Math.round(blurAmount)));
+
+            const maxCol = model.getLineMaxColumn(i + 1);
+
+            if (quantizedBlur > 0) {
+                newDecorations.push({
+                    range: new monacoRef.current!.Range(i + 1, 1, i + 1, maxCol),
+                    options: {
+                        isWholeLine: true,
+                        className: `blur-line-${quantizedBlur}`,
+                        inlineClassName: `blur-line-${quantizedBlur}`,
+                    }
+                });
+            } else if (isBlurred) {
+                // Apply a 0 blur class to ensure smooth CSS transition back to clear
+                newDecorations.push({
+                    range: new monacoRef.current!.Range(i + 1, 1, i + 1, maxCol),
+                    options: {
+                        isWholeLine: true,
+                        className: `blur-line-0`,
+                        inlineClassName: `blur-line-0`,
+                    }
+                });
+            }
+        }
+
+        decorationsRef.current = editor.deltaDecorations(decorationsRef.current, newDecorations);
+
+    }, [code, isBlurred, currentLine, level]);
+
+    // Format the language id for monaco based on extension
+    const getMonacoLang = (ext: string) => {
+        if (ext === ".py") return "python";
+        if (ext === ".js") return "javascript";
+        return "cpp";
+    };
 
     return (
-        <div className="relative flex-1 overflow-hidden bg-transparent">
-            {/* The Visual Render Layer (Behind) */}
-            <div
-                ref={backgroundRef}
-                className="absolute inset-0 overflow-hidden"
-                style={{ scrollbarWidth: 'none' /* Hide scrollbar on background */ }}
-            >
-                <DynamicBlurLayer
-                    code={code}
-                    isBlurred={isBlurred}
-                    currentLine={currentLine}
-                    level={level}
-                />
-            </div>
-
-            {/* The Actual Input Layer (In Front) */}
-            <textarea
-                ref={textareaRef}
+        <div
+            className="flex-1 w-full h-full relative"
+            onContextMenu={onContextMenu}
+            onPaste={onPaste}
+            onCopy={onCopy}
+        >
+            <Editor
+                height="100%"
+                language={getMonacoLang(currentLang.extension)}
+                theme="vs-dark"
                 value={code}
-                onChange={(e) => {
-                    onCodeChange(e.target.value);
-                    updateCursorLine();
+                onChange={handleEditorChange}
+                onMount={handleEditorDidMount}
+                options={{
+                    minimap: { enabled: true },
+                    fontSize: 14,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    lineHeight: 24,
+                    padding: { top: 16 },
+                    scrollBeyondLastLine: false,
+                    smoothScrolling: true,
+                    cursorBlinking: "smooth",
+                    cursorSmoothCaretAnimation: "on",
                 }}
-                onKeyUp={updateCursorLine}
-                onClick={updateCursorLine}
-                onScroll={handleScroll}
-                onPaste={onPaste}
-                onCopy={onCopy}
-                onContextMenu={onContextMenu}
-                className="absolute inset-0 w-full h-full resize-none bg-transparent p-4 font-mono text-sm leading-6 focus:outline-none z-10"
-                style={{
-                    caretColor: "#ffcc00",
-                    color: "transparent", // Hides the actual textarea text
-                }}
-                spellCheck={false}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                placeholder={`// Start typing your ${currentLang.name} code here...`}
             />
         </div>
     );

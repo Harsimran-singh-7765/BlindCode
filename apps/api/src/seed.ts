@@ -1,8 +1,7 @@
 /**
  * Seed script — creates your first admin account
- * Run once: npx ts-node apps/api/src/seed.ts
- *
- * Or with tsx: npx tsx apps/api/src/seed.ts
+ * Go to apps/api
+ * Run once: pnpm tsx src/seed.ts
  */
 
 import mongoose from 'mongoose'
