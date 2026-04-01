@@ -9,7 +9,7 @@ interface CodeWorkspaceProps {
     currentLang: { name: string; extension: string };
     onPaste: (e: React.ClipboardEvent) => void;
     onCopy: (e: React.ClipboardEvent) => void;
-    onContextMenu: (e: React.MouseEvent) => void;
+    onContextMenu: (e: React.MouseEvent, selectedText?: string) => void;
 }
 
 export default function CodeWorkspace({
@@ -37,6 +37,17 @@ export default function CodeWorkspace({
             setCurrentLine(e.position.lineNumber - 1);
         });
 
+        // Intercept right click to show our custom Reveal context menu
+        editor.onContextMenu((e: any) => {
+            const selection = editor.getSelection();
+            if (selection && !selection.isEmpty()) {
+                const selectedText = editor.getModel()?.getValueInRange(selection);
+                if (selectedText) {
+                    onContextMenu(e.event.browserEvent as unknown as React.MouseEvent, selectedText);
+                }
+            }
+        });
+
         // Initialize cursor line
         const pos = editor.getPosition();
         if (pos) {
@@ -61,41 +72,33 @@ export default function CodeWorkspace({
         const lineCount = model.getLineCount();
         const newDecorations: any[] = [];
         for (let i = 0; i < lineCount; i++) {
-            let blurAmount = 0;
+            let className = "blur-line-clear";
 
             if (isBlurred) {
-                if (i === currentLine) {
-                    blurAmount = 0;
+                const distance = Math.abs(currentLine - i);
+                if (distance === 0) {
+                    className = "blur-line-focus"; // 15%
+                } else if (distance === 1) {
+                    className = "blur-line-1"; // 30%
+                } else if (distance === 2) {
+                    className = "blur-line-2"; // 45%
+                } else if (distance === 3) {
+                    className = "blur-line-3"; // 70%
                 } else {
-                    blurAmount = 5;
+                    className = "blur-line-max"; // 100%
                 }
             }
 
-            // Quantize blur to nearest bin (0 to 5)
-            const quantizedBlur = Math.min(5, Math.max(0, Math.round(blurAmount)));
-
             const maxCol = model.getLineMaxColumn(i + 1);
 
-            if (quantizedBlur > 0) {
-                newDecorations.push({
-                    range: new monacoRef.current!.Range(i + 1, 1, i + 1, maxCol),
-                    options: {
-                        isWholeLine: true,
-                        className: `blur-line-${quantizedBlur}`,
-                        inlineClassName: `blur-line-${quantizedBlur}`,
-                    }
-                });
-            } else if (isBlurred) {
-                // Apply a 0 blur class to ensure smooth CSS transition back to clear
-                newDecorations.push({
-                    range: new monacoRef.current!.Range(i + 1, 1, i + 1, maxCol),
-                    options: {
-                        isWholeLine: true,
-                        className: `blur-line-0`,
-                        inlineClassName: `blur-line-0`,
-                    }
-                });
-            }
+            newDecorations.push({
+                range: new monacoRef.current!.Range(i + 1, 1, i + 1, maxCol),
+                options: {
+                    isWholeLine: true,
+                    className: className,
+                    inlineClassName: className,
+                }
+            });
         }
 
         decorationsRef.current = editor.deltaDecorations(decorationsRef.current, newDecorations);

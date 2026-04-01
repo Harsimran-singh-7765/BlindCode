@@ -6,40 +6,40 @@
 }
 
 /* Dynamic Blur Classes for Monaco Editor Lines */
-.blur-line-0 span,
-.blur-line-0 {
+.blur-line-clear span,
+.blur-line-clear {
   filter: blur(0px) !important;
-  transition: filter 0.3s ease;
+  transition: filter 1s ease;
+}
+
+.blur-line-focus span,
+.blur-line-focus {
+  filter: blur(.75px) !important;
+  transition: filter 1s ease;
 }
 
 .blur-line-1 span,
 .blur-line-1 {
   filter: blur(1.5px) !important;
-  transition: filter 0.3s ease;
+  transition: filter 1s ease;
 }
 
 .blur-line-2 span,
 .blur-line-2 {
-  filter: blur(3px) !important;
-  transition: filter 0.3s ease;
+  filter: blur(2.25px) !important;
+  transition: filter 1s ease;
 }
 
 .blur-line-3 span,
 .blur-line-3 {
-  filter: blur(4.5px) !important;
-  transition: filter 0.3s ease;
+  filter: blur(3.5px) !important;
+  transition: filter 1s ease;
 }
 
-.blur-line-4 span,
-.blur-line-4 {
+.blur-line-max span,
+.blur-line-max {
   filter: blur(5px) !important;
-  transition: filter 0.3s ease;
-}
-
-.blur-line-5 span,
-.blur-line-5 {
-  filter: blur(5px) !important;
-  transition: filter 0.3s ease;
+  transition: filter 1s ease;
 }
 
 /* Hide Monaco's current-line background so blur is pristine */

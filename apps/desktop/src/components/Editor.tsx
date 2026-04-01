@@ -92,9 +92,9 @@ export default function Editor({
         e.preventDefault();
     };
 
-    const handleContextMenu = (e: React.MouseEvent) => {
+    const handleContextMenu = (e: React.MouseEvent, externalSelectedText?: string) => {
         e.preventDefault();
-        const selectedText = window.getSelection()?.toString() || "";
+        const selectedText = externalSelectedText || window.getSelection()?.toString() || "";
         if (selectedText && isBlurred) {
             setContextMenu({ x: e.clientX, y: e.clientY, selectedText });
         }
