@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import Papa from 'papaparse'
 import './ContestLobby.css'
-import { apiGetContest, apiGetParticipants, apiAddParticipant, apiStartContest } from '../api'
+import { apiGetContest, apiGetParticipants, apiAddParticipant, apiStartContest, API_URL } from '../api'
 
+import { io, Socket } from 'socket.io-client'
 export const ParticipantStatus = {
   Unjoined: 'unjoined',
   Online: 'online',
@@ -40,7 +41,6 @@ export default function ContestLobby() {
   const [manualError, setManualError] = useState('')
   const [visiblePasswordId, setVisiblePasswordId] = useState<string | null>(null)
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Fetch contest details if not passed via nav state
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function ContestLobby() {
     setTeamForm(prev => ({ ...prev, password: pass }))
   }
 
-  // Poll participants every 2s
+  // Sync participants via WebSockets instead of polling
   useEffect(() => {
     const fetchParticipants = () => {
       if (!contestId) return
@@ -79,9 +79,17 @@ export default function ContestLobby() {
     }
 
     fetchParticipants() // immediate first fetch
-    pollRef.current = setInterval(fetchParticipants, 2000)
+
+    if (!contestId) return;
+
+    const socket: Socket = io(API_URL)
+    socket.emit('admin_join', { contestId })
+    socket.on('participant_update', () => {
+      fetchParticipants() // Instant refresh triggered by the backend
+    })
+
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
+      socket.disconnect()
     }
   }, [contestId])
 
