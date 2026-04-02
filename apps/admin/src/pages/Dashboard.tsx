@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import './Dashboard.css'
 import {
@@ -60,13 +60,14 @@ export default function Dashboard() {
   const [tab, setTab] = useState<Tab>('participants')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [timer, setTimer] = useState(0)
+  const [intendedEndTime, setIntendedEndTime] = useState<string | null>(null)
   const [ending, setEnding] = useState(false)
 
   const [addProblemCode, setAddProblemCode] = useState('')
   const [addError, setAddError] = useState('')
   const [addSuccess, setAddSuccess] = useState('')
   const [removeConfirm, setRemoveConfirm] = useState<string | null>(null)
-  
+
   const [showTeamModal, setShowTeamModal] = useState(false)
   const [teamForm, setTeamForm] = useState({
     name: '', password: '',
@@ -83,7 +84,6 @@ export default function Dashboard() {
     setTeamForm(prev => ({ ...prev, password: pass }))
   }
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Fetch contest details
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function Dashboard() {
       if (!nav?.duration) setContestDuration(data.duration)
       setContestState(data.status)
       setContestProblems(data.problemIds || [])
-      setTimer(data.duration * 60)
+      if (data.intendedEndTime) setIntendedEndTime(data.intendedEndTime)
     }).catch(console.error)
   }, [contestId])
 
@@ -105,7 +105,7 @@ export default function Dashboard() {
         .catch(console.error)
     }
     fetch()
-    
+
     // Connect WebSockets for real-time tracking
     const socket: Socket = io(API_URL)
     socket.emit('admin_join', { contestId })
@@ -113,21 +113,32 @@ export default function Dashboard() {
       fetch() // Instant refresh triggered by the backend
     })
 
-    // Fallback polling for slow syncs
-    pollRef.current = setInterval(fetch, 15000)
-    
-    return () => { 
-      if (pollRef.current) clearInterval(pollRef.current) 
+    // Also re-fetch contest data on update to get latest intendedEndTime
+    socket.on('contest_update', () => {
+      apiGetContest(contestId)
+        .then(data => {
+          setContestState(data.status)
+          if (data.intendedEndTime) setIntendedEndTime(data.intendedEndTime)
+        })
+        .catch(console.error)
+    })
+
+    return () => {
       socket.disconnect()
     }
   }, [contestId])
 
-  // Countdown timer
+  // Countdown timer — derived from intendedEndTime, survives reload
   useEffect(() => {
-    if (contestState !== ContestStatusEnum.running) return
-    const interval = setInterval(() => setTimer(t => t > 0 ? t - 1 : 0), 1000)
+    if (contestState !== ContestStatusEnum.running || !intendedEndTime) return
+    const tick = () => {
+      const msLeft = new Date(intendedEndTime).getTime() - Date.now()
+      setTimer(Math.max(0, Math.floor(msLeft / 1000)))
+    }
+    tick() // immediately set correct value
+    const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
-  }, [contestState])
+  }, [contestState, intendedEndTime])
 
   const formatTimer = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, '0')
@@ -283,22 +294,22 @@ export default function Dashboard() {
                       <td className="td-name">{p.name}</td>
                       <td>
                         <div
-                           className="lobby-participant-pass-wrap"
-                           onMouseLeave={() => setVisiblePasswordId(null)}
-                           style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-                         >
-                           <span className="lobby-participant-pass" style={{ fontFamily: 'monospace' }}>
-                             {visiblePasswordId === p._id ? p.password : '••••••'}
-                           </span>
-                           <button
-                             className="lobby-pass-eye"
-                             onClick={() => setVisiblePasswordId(p._id)}
-                             title="Show Password"
-                             style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6 }}
-                           >
-                             {visiblePasswordId === p._id ? '👁️' : '🔒'}
-                           </button>
-                         </div>
+                          className="lobby-participant-pass-wrap"
+                          onMouseLeave={() => setVisiblePasswordId(null)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                        >
+                          <span className="lobby-participant-pass" style={{ fontFamily: 'monospace' }}>
+                            {visiblePasswordId === p._id ? p.password : '••••••'}
+                          </span>
+                          <button
+                            className="lobby-pass-eye"
+                            onClick={() => setVisiblePasswordId(p._id)}
+                            title="Show Password"
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6 }}
+                          >
+                            {visiblePasswordId === p._id ? '👁️' : '🔒'}
+                          </button>
+                        </div>
                       </td>
                       <td><span className={`status-tag ${statusColors[p.status]}`}>{statusLabels[p.status]}</span></td>
                       <td className="td-problem">{p.currentProblemId?.title || '—'}</td>
