@@ -3,7 +3,8 @@ import { useEffect, useCallback, useRef } from "react";
 import Editor from "./components/Editor";
 import Terminal from "./components/Terminal";
 import ProblemSidebar, { type SubmissionData, type LeaderboardParticipant } from "./components/ProblemSidebar";
-import { LogOut, Trophy, Target, Clock, Zap, Loader2 } from "lucide-react";
+import Leaderboard from "./components/Leaderboard";
+import { LogOut, Trophy, Target, Clock, Zap, Loader2, Award } from "lucide-react";
 import type { Challenge } from "./data/questions";
 
 import { io, Socket } from "socket.io-client";
@@ -140,6 +141,7 @@ function ContestApp({
     const [activeSidebarTab, setActiveSidebarTab] = useState<"description" | "submissions" | "leaderboard">("description");
     const [submissionData, setSubmissionData] = useState<SubmissionData>({ status: "idle", message: "" });
     const [leaderboardData, setLeaderboardData] = useState<LeaderboardParticipant[]>([]);
+    const [contestEnded, setContestEnded] = useState(contestInfo.status === 'ended');
 
     // Fetch Leaderboard when event arrives
     const fetchLb = useCallback(() => {
@@ -200,7 +202,11 @@ function ContestApp({
         if (contestPaused) return; // Don't tick while paused
         const interval = setInterval(() => {
             setTimer((prev) => prev + 1);
-            setContestTimeLeft(Math.max(0, Math.floor((liveEndTime - Date.now()) / 1000)));
+            const remaining = Math.max(0, Math.floor((liveEndTime - Date.now()) / 1000));
+            setContestTimeLeft(remaining);
+            if (remaining === 0 && !contestEnded) {
+                setContestEnded(true);
+            }
         }, 1000);
         return () => clearInterval(interval);
     }, [liveEndTime, contestPaused]);
@@ -230,6 +236,9 @@ function ContestApp({
                         setLiveEndTime(new Date(data.intendedEndTime).getTime());
                     }
                     setContestPaused(data.status === 'paused');
+                    if (data.status === 'ended') {
+                        setContestEnded(true);
+                    }
                 })
                 .catch(console.error);
         });
@@ -676,6 +685,63 @@ function ContestApp({
                             >
                                 INITIATE REBOOT
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* CONTEST ENDED VIEW - SHOW ONLY LEADERBOARD */}
+            {contestEnded && (
+                <div className="fixed inset-0 bg-[#0f0f0f] z-[100] flex flex-col items-center justify-center p-8 overflow-hidden">
+                    <div className="w-full max-w-4xl h-full flex flex-col">
+                        <div className="flex items-center justify-between mb-10 shrink-0">
+                            <div className="flex items-center gap-4">
+                                <Award className="text-yellow-400" size={48} />
+                                <div className="flex flex-col">
+                                    <h1 className="text-4xl font-black text-white tracking-widest uppercase leading-none" style={{ fontFamily: 'var(--font-orbitron)' }}>
+                                        Contest Ended
+                                    </h1>
+                                    <p className="text-[#858585] font-mono mt-1 uppercase tracking-[0.2em] text-xs">Final results finalized</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={handleLogout}
+                                className="px-8 py-3 bg-[#1e1e1e] border border-[#3c3c3c] text-[#858585] rounded-xl hover:text-white transition-all font-bold tracking-widest uppercase text-xs"
+                                style={{ fontFamily: 'var(--font-orbitron)' }}
+                            >
+                                Exit Hall
+                            </button>
+                        </div>
+
+                        <div className="flex-1 bg-[#1a1a1a] border border-[#333] rounded-3xl p-8 shadow-2xl relative overflow-hidden flex flex-col">
+                           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
+                           <div className="flex-1 min-h-0">
+                                <Leaderboard 
+                                    leaderboard={leaderboardData}
+                                    currentParticipantId={participantId}
+                                    problems={contestInfo.problemIds}
+                                />
+                           </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-between items-center px-4 shrink-0">
+                            <div className="flex items-center gap-6">
+                               <div className="flex flex-col">
+                                   <span className="text-[10px] text-[#555] uppercase tracking-widest font-bold">Contest Name</span>
+                                   <span className="text-white text-lg font-bold">{contestInfo.name}</span>
+                               </div>
+                               <div className="h-8 w-px bg-[#333]"></div>
+                               <div className="flex flex-col">
+                                   <span className="text-[10px] text-[#555] uppercase tracking-widest font-bold">Your Official Team</span>
+                                   <span className="text-cyan-400 text-lg font-bold">{teamName}</span>
+                               </div>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-[10px] text-[#555] uppercase tracking-widest font-bold block mb-1">Final Standing</span>
+                                <div className="text-white font-mono text-xl">
+                                    Rank: <span className="text-yellow-400 font-black">#{leaderboardData.findIndex(p => p._id === participantId) + 1}</span> / {leaderboardData.length}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

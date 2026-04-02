@@ -119,6 +119,9 @@ export default function Dashboard() {
         .then(data => {
           setContestState(data.status)
           if (data.intendedEndTime) setIntendedEndTime(data.intendedEndTime)
+          if (data.status === ContestStatusEnum.ended) {
+            setTab('leaderboard')
+          }
         })
         .catch(console.error)
     })
@@ -133,7 +136,11 @@ export default function Dashboard() {
     if (contestState !== ContestStatusEnum.running || !intendedEndTime) return
     const tick = () => {
       const msLeft = new Date(intendedEndTime).getTime() - Date.now()
-      setTimer(Math.max(0, Math.floor(msLeft / 1000)))
+      const remainingSeconds = Math.max(0, Math.floor(msLeft / 1000))
+      setTimer(remainingSeconds)
+      if (remainingSeconds === 0 && contestState === ContestStatusEnum.running) {
+        handleEnd()
+      }
     }
     tick() // immediately set correct value
     const interval = setInterval(tick, 1000)

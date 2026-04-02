@@ -168,6 +168,14 @@ router.post('/:contestId/end', protect, async (req: AuthRequest, res) => {
       res.status(404).json({ message: 'Contest not found' })
       return
     }
+
+    // Notify all clients (admin + participants) so they pick up the 'ended' status
+    try {
+      const io = getIo();
+      io.to(`admin_${contest.contestCode}`).emit('contest_update');
+      io.to(`contest_${contest.contestCode}`).emit('contest_update');
+    } catch {}
+
     res.json({ success: true })
   } catch {
     res.status(500).json({ message: 'Server error' })
