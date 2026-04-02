@@ -3,8 +3,9 @@ import { useEffect, useCallback, useRef } from "react";
 import Editor from "./components/Editor";
 import Terminal from "./components/Terminal";
 import ProblemSidebar, { type SubmissionData } from "./components/ProblemSidebar";
-import { LogOut, Trophy, Target, Clock, Zap } from "lucide-react";
-import { CHALLENGES } from "./data/questions";
+import { LogOut, Trophy, Target, Clock, Zap, Loader2 } from "lucide-react";
+import type { Challenge } from "./data/questions";
+import { apiGetProblem } from "./services/desktopApi";
 import { compileCode } from "./services/api";
 import UserDashboard from "./pages/UserDashboard";
 import "./App.css";
@@ -93,6 +94,11 @@ function ContestApp({
     const [levelStartTime, setLevelStartTime] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Problems fetched from API
+    const [problems, setProblems] = useState<Challenge[]>([]);
+    const [problemsLoading, setProblemsLoading] = useState(true);
+    const [problemsError, setProblemsError] = useState("");
+
     // Sidebar States
     const [activeSidebarTab, setActiveSidebarTab] = useState<"description" | "submissions">("description");
     const [submissionData, setSubmissionData] = useState<SubmissionData>({ status: "idle", message: "" });
@@ -103,22 +109,41 @@ function ContestApp({
         addLog(`   Revealed: "${text.substring(0, 20)}${text.length > 20 ? "..." : ""}"`);
     };
 
-    const currentChallenge = CHALLENGES[currentLevel - 1] || CHALLENGES[0];
+    const currentChallenge = problems[currentLevel - 1];
 
     const addLog = useCallback((message: string) => {
         const timestamp = new Date().toLocaleTimeString();
         setLogs((prev) => [...prev, `[${timestamp}] ${message}`]);
     }, []);
 
-    // Start timer and log welcome on mount
+    // Fetch all problems for this contest on mount
     useEffect(() => {
-        setCode(currentChallenge.starterCode[language]);
+        if (contestInfo.problemIds.length === 0) {
+            setProblemsLoading(false);
+            setProblemsError("This contest has no problems assigned.");
+            return;
+        }
+        Promise.all(contestInfo.problemIds.map(p => apiGetProblem(p._id)))
+            .then(fetched => {
+                setProblems(fetched);
+                setProblemsLoading(false);
+            })
+            .catch(err => {
+                setProblemsError(err.message || "Failed to load problems.");
+                setProblemsLoading(false);
+            });
+    }, []);
+
+    // Set starter code and log welcome once problems are loaded
+    useEffect(() => {
+        if (problemsLoading || !currentChallenge) return;
+        setCode(currentChallenge.starterCode[language] ?? "");
         setLevelStartTime(Date.now());
         addLog(`✓ Welcome, Team ${teamName}! Contest: ${contestInfo.name}`);
-        addLog(`🎮 Level ${currentLevel}: ${currentChallenge.title}`);
-        addLog(`⏱️ Time limit: ${currentChallenge.timeLimit} seconds`);
+        addLog(`🎮 Problem 1: ${currentChallenge.title}`);
+        addLog(`⏱️ Solve each problem to advance to the next.`);
         addLog("👁️ Use Vision to peek, but beware of the sabotage...");
-    }, []);
+    }, [problemsLoading]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -358,7 +383,7 @@ function ContestApp({
                 addLog(`✅ SUBMISSION ACCEPTED: +${levelScore} pts`);
 
                 setTimeout(() => {
-                    if (currentLevel >= CHALLENGES.length) {
+                    if (currentLevel >= problems.length) {
                         setShowGameComplete(true);
                     } else {
                         setShowLevelComplete(true);
@@ -385,8 +410,8 @@ function ContestApp({
     const handleNextLevel = () => {
         setShowLevelComplete(false);
         setCurrentLevel((prev) => prev + 1);
-        const nextChallenge = CHALLENGES[currentLevel];
-        setCode(nextChallenge.starterCode[language]);
+        const nextChallenge = problems[currentLevel]; // currentLevel not yet incremented
+        setCode(nextChallenge?.starterCode[language] ?? "");
         setPeekCount(0);
         setIsBlurred(true);
         setLevelStartTime(Date.now());
@@ -394,8 +419,7 @@ function ContestApp({
         setSubmissionData({ status: "idle", message: "" });
 
         addLog(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        addLog(`🎮 Level ${currentLevel + 1}: ${nextChallenge.title}`);
-        addLog(`⏱️ Time limit: ${nextChallenge.timeLimit} seconds`);
+        addLog(`🎮 Problem ${currentLevel + 1}: ${nextChallenge?.title ?? ""}`);
     };
 
     const handleVision = () => {
@@ -415,6 +439,25 @@ function ContestApp({
 
     return (
         <div className="h-screen flex flex-row bg-[#1a1a1a] overflow-hidden">
+
+            {/* Problems loading overlay */}
+            {problemsLoading && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[100]">
+                    <div className="flex flex-col items-center gap-4">
+                        <Loader2 size={48} className="text-cyan-400 animate-spin" />
+                        <p className="text-white text-xl font-semibold">Loading problems...</p>
+                    </div>
+                </div>
+            )}
+
+            {!problemsLoading && problemsError && (
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[100]">
+                    <div className="text-center">
+                        <p className="text-red-400 text-2xl font-bold mb-2">⚠️ Error Loading Problems</p>
+                        <p className="text-white">{problemsError}</p>
+                    </div>
+                </div>
+            )}
 
             {showLevelComplete && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-8">
@@ -460,6 +503,7 @@ function ContestApp({
 
             {/* Left Column: Problem Sidebar (Now wrapped for dynamic width) */}
             <div style={{ width: sidebarWidth }} className="shrink-0 flex flex-col relative h-full">
+                {currentChallenge && (
                 <ProblemSidebar
                     challenge={currentChallenge}
                     activeTab={activeSidebarTab}
@@ -467,6 +511,7 @@ function ContestApp({
                     submission={submissionData}
                     level={currentLevel}
                 />
+                )}
             </div>
 
             {/* Horizontal Resizer for Sidebar */}
@@ -496,7 +541,7 @@ function ContestApp({
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3 px-5 py-3 bg-[#1e1e1e] rounded-xl">
                             <Target size={18} className="text-cyan-400" />
-                            <span className="text-cyan-400 font-bold text-base">{currentLevel}/{CHALLENGES.length}</span>
+                            <span className="text-cyan-400 font-bold text-base">{currentLevel}/{problems.length}</span>
                         </div>
                         <div className="flex items-center gap-3 px-5 py-3 bg-[#1e1e1e] rounded-xl">
                             <Trophy size={18} className="text-yellow-400" />

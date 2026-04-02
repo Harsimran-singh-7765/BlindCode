@@ -10,6 +10,20 @@ const generateCode = async (): Promise<string> => {
   return `PROB${String(count + 1).padStart(3, '0')}`
 }
 
+// GET /problems/:id/public — fetch full problem for desktop app (no auth required)
+router.get('/:id/public', async (req, res) => {
+  try {
+    const problem = await Problem.findById(req.params.id)
+    if (!problem) {
+      res.status(404).json({ message: 'Problem not found' })
+      return
+    }
+    res.json(problem)
+  } catch {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // GET /problems — get all problems for this admin
 router.get('/', protect, async (req: AuthRequest, res) => {
   try {

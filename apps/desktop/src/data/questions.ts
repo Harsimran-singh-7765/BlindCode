@@ -7,11 +7,15 @@ export interface Challenge {
     id: number;
     title: string;
     description: string;
-    expectedOutput: string; // Ise baad mein deprecate kar sakte ho, ab testCases use honge
+    expectedOutput: string;
     timeLimit: number;
     difficulty: "easy" | "medium" | "hard" | "insane";
     starterCode: Record<string, string>;
-    testCases: TestCase[]; // NAYA
+    testCases: TestCase[];
+    // Optional fields from the DB Problem model
+    inputFormat?: string;
+    outputFormat?: string;
+    constraints?: string;
 }
 
 export const CHALLENGES: Challenge[] = [

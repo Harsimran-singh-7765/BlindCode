@@ -425,7 +425,7 @@ import { useNavigate } from 'react-router-dom'
 import './Problems.css'
 import { apiGetProblems, apiCreateProblem, apiUpdateProblem, apiDeleteProblem } from '../api'
 
-type TestCase = { input: string; output: string; explanation: string }
+type TestCase = { input: string; expected: string; explanation: string }
 type Problem = {
   _id: string
   code: string
@@ -453,13 +453,13 @@ type FormState = {
   inputFormat: string
   outputFormat: string
   constraints: string
-  testCases: { input: string; output: string; explanation: string }[]
+  testCases: { input: string; expected: string; explanation: string }[]
 }
 
 const EMPTY_FORM: FormState = {
   title: '', difficulty: 'Easy', tags: [],
   description: '', inputFormat: '', outputFormat: '',
-  constraints: '', testCases: [{ input: '', output: '', explanation: '' }],
+  constraints: '', testCases: [{ input: '', expected: '', explanation: '' }],
 }
 
 const diffColor: Record<string, string> = {
@@ -496,7 +496,7 @@ export default function Problems() {
   }
 
   const openAdd = () => {
-    setForm({ ...EMPTY_FORM, testCases: [{ input: '', output: '', explanation: '' }] })
+    setForm({ ...EMPTY_FORM, testCases: [{ input: '', expected: '', explanation: '' }] })
     setTagInput('')
     setError('')
     setView('add')
@@ -523,7 +523,7 @@ export default function Problems() {
     setTagInput('')
   }
   const removeTag = (tag: string) => setForm(f => ({ ...f, tags: f.tags.filter(t => t !== tag) }))
-  const addTestCase = () => setForm(f => ({ ...f, testCases: [...f.testCases, { input: '', output: '', explanation: '' }] }))
+  const addTestCase = () => setForm(f => ({ ...f, testCases: [...f.testCases, { input: '', expected: '', explanation: '' }] }))
   const removeTestCase = (i: number) => setForm(f => ({ ...f, testCases: f.testCases.filter((_, idx) => idx !== i) }))
   const updateTestCase = (i: number, field: keyof TestCase, value: string) => {
     setForm(f => ({ ...f, testCases: f.testCases.map((tc, idx) => idx === i ? { ...tc, [field]: value } : tc) }))
@@ -707,7 +707,7 @@ export default function Problems() {
                     <div key={i} className="test-case">
                       <div className="tc-label">Case {i + 1}</div>
                       <div className="tc-row"><span className="tc-key">Input:</span><code className="tc-val">{tc.input}</code></div>
-                      <div className="tc-row"><span className="tc-key">Output:</span><code className="tc-val">{tc.output}</code></div>
+                      <div className="tc-row"><span className="tc-key">Expected:</span><code className="tc-val">{tc.expected}</code></div>
                       {tc.explanation && <div className="tc-row"><span className="tc-key">Note:</span><span className="tc-note">{tc.explanation}</span></div>}
                     </div>
                   ))}
@@ -795,7 +795,7 @@ export default function Problems() {
                           </div>
                           <div>
                             <div className="tc-mini-label">Expected Output</div>
-                            <textarea className="form-textarea mono-input" rows={2} value={tc.output} onChange={e => updateTestCase(i, 'output', e.target.value)} />
+                            <textarea className="form-textarea mono-input" rows={2} value={tc.expected} onChange={e => updateTestCase(i, 'expected', e.target.value)} />
                           </div>
                           <div className="full-span">
                             <div className="tc-mini-label">Explanation (optional)</div>

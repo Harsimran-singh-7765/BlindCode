@@ -12,7 +12,7 @@ const problemSchema = new mongoose.Schema({
   constraints: String,
   testCases: [{
     input: String,
-    output: String,
+    expected: String,
     explanation: String
   }],
   createdAt: { type: Date, default: Date.now }

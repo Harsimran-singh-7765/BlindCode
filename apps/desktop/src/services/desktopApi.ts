@@ -76,3 +76,39 @@ export const apiGetLeaderboard = async (contestCode: string) => {
     levelScores: { level: number; score: number; timeTaken: number; peeks: number }[]
   }[]
 }
+
+// ─── Fetch a single problem (public, no auth) ─────────────────────────────────
+
+import type { Challenge } from '../data/questions'
+
+const STARTER_CODE: Record<string, string> = {
+  cpp: `#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your solution here\n    \n    return 0;\n}`,
+  python: `# Write your solution here\n`,
+  javascript: `// Write your solution here\n`,
+}
+
+export const apiGetProblem = async (problemId: string): Promise<Challenge> => {
+  const res = await fetch(`${API_URL}/problems/${problemId}/public`, {
+    headers: { 'Content-Type': 'application/json' }
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch problem')
+
+  // Map MongoDB Problem → Challenge shape
+  return {
+    id: 0, // not used when fetching from API
+    title: data.title,
+    description: data.description || '',
+    expectedOutput: '', // deprecated, testCases used instead
+    timeLimit: 300, // default 5 minutes; DB doesn't store timeLimit
+    difficulty: (data.difficulty?.toLowerCase() ?? 'medium') as Challenge['difficulty'],
+    starterCode: STARTER_CODE,
+    testCases: (data.testCases ?? []).map((tc: { input: string; expected: string }) => ({
+      input: tc.input ?? '',
+      expected: tc.expected ?? '',
+    })),
+    inputFormat: data.inputFormat,
+    outputFormat: data.outputFormat,
+    constraints: data.constraints,
+  }
+}

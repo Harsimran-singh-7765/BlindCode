@@ -63,23 +63,39 @@ export default function ProblemSidebar({ challenge, activeTab, onTabChange, subm
                         </div>
 
                         {/* Description Text */}
-                        <div className="text-[#d4d4d4] text-base leading-relaxed">
+                        <div className="text-[#d4d4d4] text-base leading-relaxed whitespace-pre-wrap">
                             {challenge.description}
                         </div>
 
-                        {/* Example Block */}
-                        <div className="mt-4">
-                            <p className="font-bold text-white mb-2">Expected Output:</p>
-                            <div className="bg-[#1e1e1e] border border-[#3c3c3c] rounded-lg p-4 font-mono text-sm text-[#d4d4d4] whitespace-pre-wrap">
-                                {challenge.expectedOutput}
+                        {/* Input Format */}
+                        {challenge.inputFormat && (
+                            <div className="mt-2">
+                                <p className="font-bold text-white mb-2">Input Format:</p>
+                                <div className="text-[#858585] text-sm leading-relaxed whitespace-pre-wrap">
+                                    {challenge.inputFormat}
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Output Format */}
+                        {challenge.outputFormat && (
+                            <div className="mt-2">
+                                <p className="font-bold text-white mb-2">Output Format:</p>
+                                <div className="text-[#858585] text-sm leading-relaxed whitespace-pre-wrap">
+                                    {challenge.outputFormat}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Constraints */}
-                        <div className="mt-4">
+                        <div className="mt-2">
                             <p className="font-bold text-white mb-2">Constraints:</p>
                             <ul className="list-disc list-inside text-[#858585] text-sm space-y-1">
-                                <li>Time Limit: {challenge.timeLimit} seconds</li>
+                                {challenge.constraints ? (
+                                    <li className="whitespace-pre-wrap">{challenge.constraints}</li>
+                                ) : (
+                                    <li>Time Limit: {challenge.timeLimit} seconds</li>
+                                )}
                                 <li>Vision Peeks allowed: Yes (with time penalty)</li>
                             </ul>
                         </div>
