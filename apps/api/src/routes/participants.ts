@@ -1,5 +1,6 @@
 import express from 'express'
 import Contest, { ContestStatusEnum } from '../models/Contest'
+import Problem from '../models/Problem'
 import { protect, AuthRequest } from '../middleware/auth'
 import { getIo } from '../socket'
 
@@ -26,6 +27,48 @@ router.get('/participants', protect, async (req: AuthRequest, res) => {
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// GET /contests/:contestId/leaderboard
+// PUBLIC — For Desktop App Live Rankings
+router.get('/leaderboard', async (req: express.Request<ContestParams>, res) => {
+  try {
+    const { contestId } = req.params
+
+    const contest = await Contest.findOne({ contestCode: contestId })
+
+    if (!contest) {
+      res.status(404).json({ message: 'Contest not found' })
+      return
+    }
+
+    // Extract participants and map them to remove sensitive data (passwords, enrollments)
+    const safeLeaderboard = contest.participants
+      .map((p: any) => ({
+        _id: p._id,
+        name: p.name,
+        score: p.score || 0,
+        status: p.status || 'idle',
+        reveals: p.reveals || 0,
+        wrongSubmissions: p.wrongSubmissions || 0,
+        lastActive: p.lastActive,
+        currentProblemId: p.currentProblemId,
+        solvedProblemIds: p.solvedProblemIds || [] // Ensures the UI spheres work
+      }))
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score // Sort by score descending
+        
+        // Tie-breaker: earlier lastActive is better (meaning they finished first)
+        const timeA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
+        const timeB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+        return timeA - timeB;
+      })
+
+    res.status(200).json(safeLeaderboard)
+  } catch (error) {
+    console.error("Leaderboard fetch error:", error)
+    res.status(500).json({ message: 'Server error while fetching leaderboard' })
   }
 })
 
@@ -75,7 +118,9 @@ router.post('/join', async (req: express.Request<ContestParams>, res) => {
     res.status(200).json({
       participantId: existing._id,
       name: existing.name,
-      joinedAt: existing.joinedAt
+      joinedAt: existing.joinedAt,
+      score: existing.score || 0,
+      solvedProblemIds: existing.solvedProblemIds || []
     })
   } catch (error) {
     console.error(error)
@@ -112,7 +157,8 @@ router.post('/', protect, async (req: AuthRequest & express.Request<ContestParam
       name: name.trim(),
       password: password,
       members: members || [],
-      status: 'unjoined'
+      status: 'unjoined',
+      solvedProblemIds: []
     }
 
     const updatedContest = await Contest.findOneAndUpdate(
@@ -177,7 +223,8 @@ router.post('/bulk', protect, async (req: AuthRequest & express.Request<ContestP
         name: teamName,
         password: t.password,
         members: t.members,
-        status: 'unjoined'
+        status: 'unjoined',
+        solvedProblemIds: []
       }
 
       created.push(newParticipant)
@@ -199,8 +246,8 @@ router.post('/bulk', protect, async (req: AuthRequest & express.Request<ContestP
   }
 })
 
-// POST /:participantId/heartbeat
-router.post('/:participantId/heartbeat', async (req: express.Request<{ contestId: string; participantId: string }>, res) => {
+// POST /participants/:participantId/heartbeat
+router.post('/participants/:participantId/heartbeat', async (req: express.Request<{ contestId: string; participantId: string }>, res) => {
   try {
     const { contestId, participantId } = req.params;
     const { status, compiles, wrongSubmissions, reveals, currentProblemId } = req.body;
@@ -222,7 +269,7 @@ router.post('/:participantId/heartbeat', async (req: express.Request<{ contestId
     if (typeof wrongSubmissions === 'number') participant.wrongSubmissions = wrongSubmissions;
     if (typeof reveals === 'number') participant.reveals = reveals;
     if (currentProblemId) participant.currentProblemId = currentProblemId;
-    
+
     participant.lastActive = new Date();
 
     await contest.save();
@@ -233,11 +280,11 @@ router.post('/:participantId/heartbeat', async (req: express.Request<{ contestId
   }
 });
 
-// POST /:participantId/submit
-router.post('/:participantId/submit', async (req: express.Request<{ contestId: string; participantId: string }>, res) => {
+// POST /participants/:participantId/submit
+router.post('/participants/:participantId/submit', async (req: express.Request<{ contestId: string; participantId: string }>, res) => {
   try {
     const { contestId, participantId } = req.params;
-    const { passed, timeTaken, peeks, difficulty } = req.body;
+    const { passed, timeTaken, peeks, difficulty, problemId } = req.body;
 
     const contest = await Contest.findOne({ contestCode: contestId });
     if (!contest) {
@@ -254,26 +301,63 @@ router.post('/:participantId/submit', async (req: express.Request<{ contestId: s
     if (!passed) {
       participant.wrongSubmissions += 1;
       await contest.save();
+      
+      try {
+        getIo().to(`admin_${contest.contestCode}`).emit('participant_update');
+        getIo().to(`contest_${contest.contestCode}`).emit('participant_update');
+      } catch (e) { }
+
       res.json({ success: true, passed: false });
       return;
     }
 
-    const diffLower = String(difficulty).toLowerCase();
-    const baseScore = diffLower === "easy" ? 100 : diffLower === "medium" ? 200 : 300;
-    const timeLimit = 300; // 5 minutes default
-    const timeBonus = Math.max(0, Math.floor((timeLimit - timeTaken) * 0.5));
+    // Fetch the actual problem to get explicit points and timeLimit
+    const targetProblemId = problemId || participant.currentProblemId;
+    let baseScore = 100;
+    let timeLimit = 300;
+    
+    if (targetProblemId) {
+      const actualProblem = await Problem.findById(targetProblemId);
+      if (actualProblem) {
+        baseScore = actualProblem.points || 100;
+        timeLimit = actualProblem.timeLimit || 300;
+      }
+    } else {
+      const diffLower = String(difficulty).toLowerCase();
+      baseScore = diffLower === "easy" ? 100 : diffLower === "medium" ? 200 : 300;
+    }
+
+    // Remove time bonus to ensure points exactly match the question configuration
+    // const timeBonus = Math.max(0, Math.floor((timeLimit - timeTaken) * 0.5));
     const peekPenalty = peeks * 20;
-    const levelScore = Math.max(0, baseScore + timeBonus - peekPenalty);
+    // Don't let penalties reduce score below 0 for a correct submission
+    const levelScore = Math.max(0, baseScore - peekPenalty);
 
     participant.score += levelScore;
     participant.status = 'submitted';
     participant.lastActive = new Date();
 
+    // NAYA LOGIC: Add problem to solvedProblemIds array if not already present
+    if (targetProblemId) {
+      if (!participant.solvedProblemIds) {
+        participant.solvedProblemIds = [];
+      }
+      // Check if it's already in the array to avoid duplicates
+      const problemIdStr = targetProblemId.toString();
+      const alreadySolved = participant.solvedProblemIds.some((id: any) => id.toString() === problemIdStr);
+
+      if (!alreadySolved) {
+        participant.solvedProblemIds.push(targetProblemId);
+      }
+    }
+
+    contest.markModified('participants');
     await contest.save();
 
     try {
       getIo().to(`admin_${contest.contestCode}`).emit('participant_update');
-    } catch (e) {}
+      getIo().to(`contest_${contest.contestCode}`).emit('participant_update');
+    } catch (e) { }
 
     res.json({ success: true, passed: true, scoreEarned: levelScore });
   } catch (err) {

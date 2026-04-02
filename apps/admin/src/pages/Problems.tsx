@@ -9,6 +9,8 @@ type Problem = {
   code: string
   title: string
   difficulty: 'Easy' | 'Medium' | 'Hard'
+  points?: number
+  timeLimit?: number
   tags: string[]
   description: string
   inputFormat: string
@@ -21,6 +23,8 @@ type Problem = {
 type FormState = {
   title: string
   difficulty: 'Easy' | 'Medium' | 'Hard'
+  points: number
+  timeLimit: number
   tags: string[]
   description: string
   inputFormat: string
@@ -30,7 +34,7 @@ type FormState = {
 }
 
 const EMPTY_FORM: FormState = {
-  title: '', difficulty: 'Easy', tags: [],
+  title: '', difficulty: 'Easy', points: 100, timeLimit: 300, tags: [],
   description: '', inputFormat: '', outputFormat: '',
   constraints: '', testCases: [{ input: '', expected: '', explanation: '', hidden: false }],
 }
@@ -78,7 +82,8 @@ export default function Problems() {
   const openEdit = (p: Problem) => {
     setSelected(p)
     setForm({
-      title: p.title, difficulty: p.difficulty as 'Easy' | 'Medium' | 'Hard', tags: [...p.tags],
+      title: p.title, difficulty: p.difficulty as 'Easy' | 'Medium' | 'Hard', 
+      points: p.points ?? 100, timeLimit: p.timeLimit ?? 300, tags: [...p.tags],
       description: p.description, inputFormat: p.inputFormat,
       outputFormat: p.outputFormat, constraints: p.constraints,
       testCases: p.testCases.map(t => ({ ...t }))
@@ -253,6 +258,8 @@ export default function Problems() {
                   </div>
                   <div className="detail-meta">
                     <span className={`diff-badge ${diffColor[selected.difficulty]}`}>{selected.difficulty}</span>
+                    <span className="tag">🏆 {selected.points ?? 100} pts</span>
+                    <span className="tag">⏱️ {selected.timeLimit ?? 300}s</span>
                     {selected.tags.map(t => <span key={t} className="tag">{t}</span>)}
                   </div>
                 </div>
@@ -322,6 +329,16 @@ export default function Problems() {
                       <button key={d} className={`diff-opt ${form.difficulty === d ? 'diff-opt-active ' + diffColor[d] : ''}`} onClick={() => setForm(f => ({ ...f, difficulty: d }))}>{d}</button>
                     ))}
                   </div>
+                </div>
+
+                <div className="form-field">
+                  <label className="form-label">Points *</label>
+                  <input type="number" className="form-input" min="0" value={form.points} onChange={e => setForm(f => ({ ...f, points: parseInt(e.target.value) || 0 }))} />
+                </div>
+
+                <div className="form-field">
+                  <label className="form-label">Time Limit (sec) *</label>
+                  <input type="number" className="form-input" min="1" value={form.timeLimit} onChange={e => setForm(f => ({ ...f, timeLimit: parseInt(e.target.value) || 300 }))} />
                 </div>
 
                 <div className="form-field">

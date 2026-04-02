@@ -14,7 +14,7 @@ interface ContestInfo {
 }
 
 interface UserDashboardProps {
-  onContestJoined: (contestId: string, playerName: string, password: string, contestInfo: ContestInfo, participantId: string) => void;
+  onContestJoined: (contestId: string, playerName: string, password: string, contestInfo: ContestInfo, participantId: string, score: number, solvedProblemIds: string[]) => void;
 }
 
 type Screen = "login" | "enter-code" | "waiting";
@@ -25,6 +25,8 @@ export default function UserDashboard({ onContestJoined }: UserDashboardProps) {
   const [password, setPassword] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [participantId, setParticipantId] = useState("");
+  const [initScore, setInitScore] = useState(0);
+  const [initSolved, setInitSolved] = useState<string[]>([]);
   
   const [contest, setContest] = useState<ContestInfo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ export default function UserDashboard({ onContestJoined }: UserDashboardProps) {
         const data = await apiGetContestStatus(contest.contestCode);
         if (data.status === "running") {
           if (pollRef.current) clearInterval(pollRef.current);
-          onContestJoined(contest._id, teamName, password, contest, participantId);
+          onContestJoined(contest._id, teamName, password, contest, participantId, initScore, initSolved);
         }
       } catch {}
     };
@@ -79,10 +81,15 @@ export default function UserDashboard({ onContestJoined }: UserDashboardProps) {
       // Attempt to join the contest with team credentials
       const joinData = await apiJoinContest(code, teamName, password);
       const joinedParticipantId = joinData.participantId;
+      const score = joinData.score || 0;
+      const solvedIds = joinData.solvedProblemIds || [];
+      
       setParticipantId(joinedParticipantId);
+      setInitScore(score);
+      setInitSolved(solvedIds);
       
       if (data.status === "running") {
-        onContestJoined(data._id, teamName, password, data, joinedParticipantId);
+        onContestJoined(data._id, teamName, password, data, joinedParticipantId, score, solvedIds);
       } else {
         setScreen("waiting"); // draft or paused — wait for admin to start
       }

@@ -47,6 +47,7 @@ export interface SubmitScorePayload {
   timeTaken: number;
   peeks: number;
   difficulty: string;
+  problemId?: string;
 }
 
 export const apiSubmitScore = async (contestCode: string, participantId: string, payload: SubmitScorePayload) => {
@@ -116,7 +117,8 @@ export const apiGetProblem = async (problemId: string): Promise<Challenge> => {
     title: data.title,
     description: data.description || '',
     expectedOutput: '', // deprecated, testCases used instead
-    timeLimit: 300, // default 5 minutes; DB doesn't store timeLimit
+    timeLimit: data.timeLimit || 300,
+    points: data.points || 100,
     difficulty: (data.difficulty?.toLowerCase() ?? 'medium') as Challenge['difficulty'],
     starterCode: STARTER_CODE,
     testCases: (data.testCases ?? []).map((tc: { input: string; expected: string; hidden?: boolean }) => ({

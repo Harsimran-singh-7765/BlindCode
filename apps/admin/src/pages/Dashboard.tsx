@@ -240,6 +240,7 @@ export default function Dashboard() {
           <div className="dash-timer">{formatTimer(timer)}</div>
         </div>
         <div className="header-right">
+          <button className="back-btn" onClick={() => navigate('/')}>← Home</button>
           <button className="prob-bank-btn" onClick={() => navigate('/problems')}>Problem Bank</button>
           <button className="theme-toggle" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>
             {theme === 'dark' ? '☀' : '☾'}
