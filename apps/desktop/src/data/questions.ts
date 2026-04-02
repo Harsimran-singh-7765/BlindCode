@@ -18,6 +18,7 @@ export interface Challenge {
     inputFormat?: string;
     outputFormat?: string;
     constraints?: string;
+    points?: number;
 }
 
 export const CHALLENGES: Challenge[] = [

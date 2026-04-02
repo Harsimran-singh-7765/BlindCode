@@ -667,33 +667,33 @@
 }
 
 .prob-sphere.unsolved {
-  background: var(--bg);
+  background: #000000;
   border: 2px solid var(--border);
 }
 
 .prob-sphere.solved {
-  background: var(--accent2);
-  box-shadow: 0 0 10px rgba(78, 205, 196, 0.6);
-  border: 2px solid var(--accent2);
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  border: 2px solid #22c55e;
 }
 
 .prob-sphere.current {
   background: transparent;
-  border: 2px solid var(--accent);
+  border: 2px solid #a855f7;
   animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(124, 106, 247, 0.7);
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);
   }
 
   70% {
-    box-shadow: 0 0 0 6px rgba(124, 106, 247, 0);
+    box-shadow: 0 0 0 6px rgba(168, 85, 247, 0);
   }
 
   100% {
-    box-shadow: 0 0 0 0 rgba(124, 106, 247, 0);
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
   }
 }
 

@@ -32,15 +32,19 @@ export default function App() {
     const [joinedTeamName, setJoinedTeamName] = useState("");
     const [joinedPassword, setJoinedPassword] = useState("");
     const [participantId, setParticipantId] = useState("");
+    const [initialScore, setInitialScore] = useState(0);
+    const [initialSolved, setInitialSolved] = useState<string[]>([]);
 
     if (!contestInfo) {
         return (
             <UserDashboard
-                onContestJoined={(_contestId, teamName, password, info, pId) => {
+                onContestJoined={(_contestId, teamName, password, info, pId, score, solvedIds) => {
                     setJoinedTeamName(teamName);
                     setJoinedPassword(password);
                     setContestInfo(info);
                     setParticipantId(pId);
+                    setInitialScore(score);
+                    setInitialSolved(solvedIds);
                 }}
             />
         );
@@ -52,6 +56,8 @@ export default function App() {
             joinedTeamName={joinedTeamName}
             joinedPassword={joinedPassword}
             participantId={participantId}
+            initialScore={initialScore}
+            initialSolved={initialSolved}
             onExit={() => setContestInfo(null)}
         />
     );
@@ -67,12 +73,16 @@ function ContestApp({
     joinedTeamName,
     joinedPassword,
     participantId,
+    initialScore,
+    initialSolved,
     onExit,
 }: {
     contestInfo: ContestInfo;
     joinedTeamName: string;
     joinedPassword: string;
     participantId: string;
+    initialScore: number;
+    initialSolved: string[];
     onExit: () => void;
 }) {
     const [teamName] = useState(joinedTeamName);
@@ -80,7 +90,12 @@ function ContestApp({
     const [code, setCode] = useState("");
     const [isBlurred, setIsBlurred] = useState(true);
     const [logs, setLogs] = useState<string[]>([]);
-    const [currentLevel, setCurrentLevel] = useState(1);
+    
+    // Automatically resume at the first unsolved problem, capped by total problems
+    const maxProblems = contestInfo.problemIds?.length || 1;
+    const computedLevel = Math.min(initialSolved.length + 1, maxProblems);
+    const [currentLevel, setCurrentLevel] = useState(computedLevel);
+    
     const [timer, setTimer] = useState(0);
     const [visionTimeLeft, setVisionTimeLeft] = useState(0);
     const [peekCount, setPeekCount] = useState(0);
@@ -104,9 +119,9 @@ function ContestApp({
     const [sidebarWidth, setSidebarWidth] = useState(450);
     const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
 
-    const [score, setScore] = useState(0);
-    const [showLevelComplete, setShowLevelComplete] = useState(false);
-    const [showGameComplete, setShowGameComplete] = useState(false);
+    const [score, setScore] = useState(initialScore);
+    const [showLevelComplete, setShowLevelComplete] = useState(initialSolved.length === maxProblems && maxProblems > 0);
+    const [showGameComplete, setShowGameComplete] = useState(initialSolved.length === maxProblems && maxProblems > 0);
     const [levelStartTime, setLevelStartTime] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -120,20 +135,17 @@ function ContestApp({
     const [submissionData, setSubmissionData] = useState<SubmissionData>({ status: "idle", message: "" });
     const [leaderboardData, setLeaderboardData] = useState<LeaderboardParticipant[]>([]);
 
-    // Fetch Leaderboard periodically
+    // Fetch Leaderboard when event arrives
+    const fetchLb = useCallback(() => {
+        if (!contestInfo?.contestCode) return;
+        apiGetLeaderboard(contestInfo.contestCode)
+            .then(data => setLeaderboardData(data))
+            .catch(err => console.error("Failed to update leaderboard:", err));
+    }, [contestInfo?.contestCode]);
+
     useEffect(() => {
-        const fetchLb = () => {
-            if (!contestInfo?.contestCode) return;
-            apiGetLeaderboard(contestInfo.contestCode)
-                .then(data => setLeaderboardData(data))
-                .catch(err => console.error("Failed to update leaderboard:", err));
-        };
-
         fetchLb(); // Initial fetch
-        const interval = setInterval(fetchLb, 5000); // Poll every 5 seconds
-
-        return () => clearInterval(interval);
-    }, [contestInfo.contestCode]);
+    }, [fetchLb]);
 
     const handlePartialVision = (cost: number, text: string) => {
         setTimer(prev => prev + cost);
@@ -201,10 +213,14 @@ function ContestApp({
             });
         });
 
+        newSocket.on("participant_update", () => {
+            fetchLb();
+        });
+
         return () => {
             newSocket.disconnect();
         };
-    }, [contestInfo.contestCode, participantId]);
+    }, [contestInfo.contestCode, participantId, fetchLb]);
 
     // We keep these in refs so the heartbeat interval doesn't reset on every minor state change
     const latestBeatPayload = useRef({
@@ -480,7 +496,8 @@ function ContestApp({
                     passed: allPassed,
                     timeTaken: Math.floor((Date.now() - levelStartTime) / 1000), // Note: does not include penalties correctly, but we'll abide by current compute
                     peeks: peekCount,
-                    difficulty: currentChallenge.difficulty
+                    difficulty: currentChallenge.difficulty,
+                    problemId: currentChallenge._id
                 });
                 if (submitRes.success && submitRes.passed) {
                     backendScore = submitRes.scoreEarned || 0;
@@ -654,6 +671,7 @@ function ContestApp({
                         level={currentLevel}
                         leaderboard={leaderboardData}
                         currentParticipantId={participantId}
+                        problems={contestInfo.problemIds}
                     />
                 )}
             </div>
