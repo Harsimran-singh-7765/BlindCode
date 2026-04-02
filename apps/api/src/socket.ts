@@ -21,7 +21,8 @@ export const initSocket = (httpServer: HttpServer) => {
     });
 
     socket.on('participant_join', async ({ contestId, participantId }) => {
-      socket.join(`part_${participantId}`);
+      // Join contest room
+      socket.join(`contest_${contestId}`);
       try {
         const contest = await Contest.findOne({ contestCode: contestId });
         if (contest) {
@@ -33,7 +34,7 @@ export const initSocket = (httpServer: HttpServer) => {
             io.to(`admin_${contestId}`).emit('participant_update');
           }
         }
-        
+
         socket.data.contestId = contestId;
         socket.data.participantId = participantId;
       } catch (err) {
@@ -48,17 +49,17 @@ export const initSocket = (httpServer: HttpServer) => {
         if (contest) {
           const participant = contest.participants.id(participantId);
           if (participant) {
-             if (status && participant.status !== 'submitted') participant.status = status;
-             if (compiles !== undefined) participant.compiles = compiles;
-             if (wrongSubmissions !== undefined) participant.wrongSubmissions = wrongSubmissions;
-             if (reveals !== undefined) participant.reveals = reveals;
-             if (currentProblemId) participant.currentProblemId = currentProblemId;
-             participant.lastActive = new Date();
-             await contest.save();
-             io.to(`admin_${contestId}`).emit('participant_update');
+            if (status && participant.status !== 'submitted') participant.status = status;
+            if (compiles !== undefined) participant.compiles = compiles;
+            if (wrongSubmissions !== undefined) participant.wrongSubmissions = wrongSubmissions;
+            if (reveals !== undefined) participant.reveals = reveals;
+            if (currentProblemId) participant.currentProblemId = currentProblemId;
+            participant.lastActive = new Date();
+            await contest.save();
+            io.to(`admin_${contestId}`).emit('participant_update');
           }
         }
-      } catch(err) {}
+      } catch (err) { }
     });
 
     socket.on('disconnect', async () => {
@@ -74,7 +75,7 @@ export const initSocket = (httpServer: HttpServer) => {
               io.to(`admin_${contestId}`).emit('participant_update');
             }
           }
-        } catch(err) {}
+        } catch (err) { }
       }
     });
   });
