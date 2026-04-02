@@ -33,52 +33,6 @@ router.get('/code/:contestCode', async (req, res) => {
   }
 })
 
-// POST /contests/:contestId/join — user joins a contest by contestCode (no auth needed)
-router.post('/:contestId/join', async (req, res) => {
-  try {
-    const { name, addedByAdmin = false } = req.body
-    if (!name || !name.trim()) {
-      res.status(400).json({ message: 'Name is required' })
-      return
-    }
-    const contest = await Contest.findOne({ contestCode: req.params.contestId })
-    if (!contest) {
-      res.status(404).json({ message: 'Contest not found' })
-      return
-    }
-    if (contest.status === 'ended') {
-      res.status(400).json({ message: 'Contest has already ended' })
-      return
-    }
-    const participant = {
-      _id: new mongoose.Types.ObjectId(),
-      name: name.trim(),
-      addedByAdmin,
-      joinedAt: new Date()
-    }
-    await Contest.findByIdAndUpdate(contest._id, {
-      $push: { participants: participant }
-    })
-    res.status(201).json(participant)
-  } catch {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
-// GET /contests/:contestId/participants — get participant list (polled by admin lobby)
-router.get('/:contestId/participants', async (req, res) => {
-  try {
-    const contest = await Contest.findOne({ contestCode: req.params.contestId })
-    if (!contest) {
-      res.status(404).json({ message: 'Contest not found' })
-      return
-    }
-    res.json((contest as any).participants || [])
-  } catch {
-    res.status(500).json({ message: 'Server error' })
-  }
-})
-
 // ─── Admin protected routes ───────────────────────────────────────────────────
 
 // GET /contests — get all contests for this admin

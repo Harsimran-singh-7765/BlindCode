@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Play, Eye, EyeOff, X, ChevronDown, Code2, Send } from "lucide-react";
+import { Play, Eye, X, ChevronDown, Code2, Send } from "lucide-react";
 import CodeWorkspace from "./CodeWorkspace";
 
 interface EditorProps {
@@ -23,21 +23,12 @@ const LANGUAGES = [
     { id: "javascript", name: "JavaScript", icon: "JS", extension: ".js" },
 ];
 
-interface Droplet {
-    id: number;
-    x: number;
-    y: number;
-    size: "large" | "medium" | "small" | "tiny";
-    rotation: number;
-}
-
 export default function Editor({
     code,
     onCodeChange,
     isBlurred,
     onRun,
     onSubmit,
-    onVision,
     onPartialVision,
     level,
     visionTimeLeft,
@@ -50,34 +41,6 @@ export default function Editor({
     const [showLangMenu, setShowLangMenu] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; selectedText: string } | null>(null);
     const [revealedPopup, setRevealedPopup] = useState<{ x: number; y: number; text: string } | null>(null);
-
-    const droplets: Droplet[] = [
-        { id: 0, x: 15, y: 20, size: "large", rotation: 5 },
-        { id: 1, x: 45, y: 35, size: "medium", rotation: -8 },
-        { id: 2, x: 75, y: 15, size: "small", rotation: 12 },
-        { id: 3, x: 25, y: 55, size: "tiny", rotation: -3 },
-        { id: 4, x: 60, y: 45, size: "large", rotation: 7 },
-        { id: 5, x: 85, y: 65, size: "medium", rotation: -10 },
-        { id: 6, x: 35, y: 80, size: "small", rotation: 2 },
-        { id: 7, x: 55, y: 25, size: "tiny", rotation: -5 },
-        { id: 8, x: 10, y: 70, size: "large", rotation: 8 },
-        { id: 9, x: 70, y: 85, size: "medium", rotation: -12 },
-        { id: 10, x: 40, y: 10, size: "small", rotation: 4 },
-        { id: 11, x: 90, y: 40, size: "tiny", rotation: -7 },
-        { id: 12, x: 20, y: 90, size: "large", rotation: 10 },
-        { id: 13, x: 50, y: 60, size: "medium", rotation: -2 },
-        { id: 14, x: 80, y: 30, size: "small", rotation: 6 },
-        { id: 15, x: 30, y: 45, size: "tiny", rotation: -9 },
-        { id: 16, x: 65, y: 75, size: "large", rotation: 3 },
-        { id: 17, x: 12, y: 50, size: "medium", rotation: -6 },
-        { id: 18, x: 48, y: 88, size: "small", rotation: 11 },
-        { id: 19, x: 78, y: 55, size: "tiny", rotation: -4 },
-        { id: 20, x: 22, y: 32, size: "large", rotation: 9 },
-        { id: 21, x: 58, y: 72, size: "medium", rotation: -11 },
-        { id: 22, x: 88, y: 18, size: "small", rotation: 1 },
-        { id: 23, x: 38, y: 62, size: "tiny", rotation: -8 },
-        { id: 24, x: 68, y: 42, size: "large", rotation: 14 },
-    ];
 
     useEffect(() => {
         const lines = code.split("\n").length;

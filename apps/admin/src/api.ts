@@ -121,18 +121,35 @@ export const apiGetParticipants = async (contestId: string) => {
 
 export const apiAddParticipant = async (
   contestId: string,
-  name: string,
-  addedByAdmin = true
+  teamData: {
+    name: string,
+    password?: string,
+    members: {name: string, enroll: number}[],
+    addedByAdmin?: boolean
+  }
 ) => {
   const res = await fetch(`${API_URL}/contests/${contestId}/join`, {
     method: 'POST',
     headers: authHeader(),
-    body: JSON.stringify({ name, addedByAdmin })
+    body: JSON.stringify({ ...teamData, addedByAdmin: true })
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.message)
   return data
 }
+
+export const apiAddParticipantsBulk = async (contestId: string, teams: any[]) => {
+  const res = await fetch(`${API_URL}/contests/${contestId}/bulk`, {
+    method: 'POST',
+    headers: authHeader(),
+    body: JSON.stringify({ teams })
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.message)
+  return data
+}
+
+
 
 // ─── Problems ────────────────────────────────────────────────────────────────
 
