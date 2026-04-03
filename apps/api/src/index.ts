@@ -19,7 +19,7 @@ initSocket(server)
 
 app.use(
   cors({
-    origin: ['*'],
+    origin: '*',
     // credentials: true
   })
 )
