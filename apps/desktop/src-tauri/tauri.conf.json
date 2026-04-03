@@ -13,7 +13,12 @@
   "tauri": {
     "allowlist": {
       "http": {
-        "all": true
+        "all": true,
+        "scope": [
+          "http://13.206.10.105/*",
+          "https://api-production-cf11.up.railway.app/*",
+          "http://localhost:4000/*"
+        ]
       },
       "window": {
         "all": true
@@ -56,7 +61,7 @@
       }
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; connect-src 'self' http://13.206.10.105:80 https://api-production-cf11.up.railway.app;"
     },
     "updater": {
       "active": false

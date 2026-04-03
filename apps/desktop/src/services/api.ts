@@ -1,3 +1,4 @@
+import { http } from "@tauri-apps/api";
 
 const ENV = import.meta.env.VITE_TAURI_ENV;
 const API_URL = ENV === "CLOUD" ? import.meta.env.VITE_TAURI_BACKEND_URL_CLOUD : import.meta.env.VITE_TAURI_BACKEND_URL_LOCAL;
@@ -33,26 +34,27 @@ export async function compileCode(code: string, language: string, input: string 
     const version = versionMap[pistonLang] || "1.0.0";
 
     try {
-        const response = await fetch(CODE_EXEC_URL, {
+        const response = await http.fetch<any>(CODE_EXEC_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
+            body: http.Body.json({
                 language: pistonLang,
                 version: version,
                 files: [
                     { content: code }
                 ],
                 stdin: input
-            })
+            }),
+            responseType: http.ResponseType.JSON
         });
 
         if (!response.ok) {
-            throw new Error(`API returned ${response.status}: ${response.statusText}`);
+            throw new Error(`API returned ${response.status}`);
         }
 
-        const result = await response.json();
+        const result = response.data;
 
         if (result.compile && result.compile.code !== 0) {
             return {
@@ -92,12 +94,14 @@ export async function compileCode(code: string, language: string, input: string 
 export const apiGetLeaderboard = async (contestCode: string) => {
     const url = `${API_URL}/api/contests/${contestCode}/leaderboard`;
     try {
-        const response = await fetch(url);
+        const response = await http.fetch<any>(url, {
+            method: "GET",
+            responseType: http.ResponseType.JSON
+        });
         if (!response.ok) {
             throw new Error(`Failed to fetch leaderboard from ${url}`);
         }
-        const data = await response.json();
-        return data; // Returns array of participants sorted by score
+        return response.data; // Returns array of participants sorted by score
     } catch (error) {
         console.error("Leaderboard fetch error:", error);
         throw error; // Let the caller handle and log it to addLog
