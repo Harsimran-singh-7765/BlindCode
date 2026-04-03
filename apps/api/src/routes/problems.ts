@@ -55,7 +55,7 @@ router.put('/:id', protect, async (req: AuthRequest, res) => {
     const problem = await Problem.findOneAndUpdate(
       { _id: req.params.id, adminId: req.adminId },
       req.body,
-      { new: true }
+      { returnDocument: 'after' }
     )
     if (!problem) {
       res.status(404).json({ message: 'Problem not found' })

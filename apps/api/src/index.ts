@@ -17,11 +17,20 @@ const app = express()
 const server = http.createServer(app)
 initSocket(server)
 
-app.use(cors())
+app.use(
+  cors({
+    origin: ['http://localhost:5174', 'https://blind-code-admin.vercel.app'],
+    credentials: true
+  })
+)
 app.use(express.json())
 
 app.get('/', (req, res) => {
   res.send('BlindCode API running')
+})
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK')
 })
 
 app.use('/auth', authRoutes)
@@ -33,8 +42,13 @@ app.use('/contests/:contestId', resultRoutes)
 const PORT = process.env.PORT || 4000
 
 // Start server ONLY after DB is connected
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
+connectDB()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`)
+    })
   })
-})
+  .catch((err) => {
+    console.error('DB connection failed:', err)
+    process.exit(1)
+  })

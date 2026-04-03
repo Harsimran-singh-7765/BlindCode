@@ -105,7 +105,7 @@ router.post('/:contestId/start', protect, async (req: AuthRequest, res) => {
       const io = getIo();
       io.to(`admin_${contestDoc.contestCode}`).emit('contest_update');
       io.to(`contest_${contestDoc.contestCode}`).emit('contest_update');
-    } catch {}
+    } catch { }
 
     res.json({ success: true, contest: contestDoc })
   } catch {
@@ -148,7 +148,7 @@ router.post('/:contestId/pause', protect, async (req: AuthRequest, res) => {
       const io = getIo();
       io.to(`admin_${contest.contestCode}`).emit('contest_update');
       io.to(`contest_${contest.contestCode}`).emit('contest_update');
-    } catch {}
+    } catch { }
 
     res.json({ status: contest.status, intendedEndTime: contest.intendedEndTime })
   } catch {
@@ -162,7 +162,7 @@ router.post('/:contestId/end', protect, async (req: AuthRequest, res) => {
     const contest = await Contest.findOneAndUpdate(
       { contestCode: req.params.contestId, adminId: req.adminId },
       { status: ContestStatusEnum.ended, endedAt: new Date() },
-      { new: true }
+      { returnDocument: 'after' }
     )
     if (!contest) {
       res.status(404).json({ message: 'Contest not found' })
@@ -174,7 +174,7 @@ router.post('/:contestId/end', protect, async (req: AuthRequest, res) => {
       const io = getIo();
       io.to(`admin_${contest.contestCode}`).emit('contest_update');
       io.to(`contest_${contest.contestCode}`).emit('contest_update');
-    } catch {}
+    } catch { }
 
     res.json({ success: true })
   } catch {
@@ -197,7 +197,7 @@ router.post('/:contestId/problems', protect, async (req: AuthRequest, res) => {
     const contest = await Contest.findOneAndUpdate(
       { contestCode: req.params.contestId, adminId: req.adminId },
       { $addToSet: { problemIds: problem._id } },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('problemIds')
     res.json(contest)
   } catch {
@@ -211,7 +211,7 @@ router.delete('/:contestId/problems/:problemId', protect, async (req: AuthReques
     const contest = await Contest.findOneAndUpdate(
       { contestCode: req.params.contestId, adminId: req.adminId },
       { $pull: { problemIds: req.params.problemId } },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('problemIds')
     res.json(contest)
   } catch {

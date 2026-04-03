@@ -58,7 +58,7 @@ router.get('/leaderboard', async (req: express.Request<ContestParams>, res) => {
       }))
       .sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score // Sort by score descending
-        
+
         // Tie-breaker: earlier lastActive is better (meaning they finished first)
         const timeA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
         const timeB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
@@ -164,7 +164,7 @@ router.post('/', protect, async (req: AuthRequest & express.Request<ContestParam
     const updatedContest = await Contest.findOneAndUpdate(
       { contestCode: contestId },
       { $push: { participants: newParticipant } },
-      { new: true }
+      { returnDocument: 'after' }
     )
 
     const newlyAdded = updatedContest!.participants[updatedContest!.participants.length - 1]
@@ -301,7 +301,7 @@ router.post('/participants/:participantId/submit', async (req: express.Request<{
     if (!passed) {
       participant.wrongSubmissions += 1;
       await contest.save();
-      
+
       try {
         getIo().to(`admin_${contest.contestCode}`).emit('participant_update');
         getIo().to(`contest_${contest.contestCode}`).emit('participant_update');
@@ -315,7 +315,7 @@ router.post('/participants/:participantId/submit', async (req: express.Request<{
     const targetProblemId = problemId || participant.currentProblemId;
     let baseScore = 100;
     let timeLimit = 300;
-    
+
     if (targetProblemId) {
       const actualProblem = await Problem.findById(targetProblemId);
       if (actualProblem) {
