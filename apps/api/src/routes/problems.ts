@@ -20,7 +20,8 @@ router.get('/:id/public', async (req, res) => {
     }
     res.json(problem)
   } catch {
-    res.status(500).json({ message: 'Server error' })
+    console.error(err)
+    res.status(500).json({ message: 'Server error', error: err })
   }
 })
 
@@ -30,7 +31,9 @@ router.get('/', protect, async (req: AuthRequest, res) => {
     const problems = await Problem.find({ adminId: req.adminId })
     res.json(problems)
   } catch {
-    res.status(500).json({ message: 'Server error' })
+    console.error(err)
+    res.status(500).json({ message: 'Server error', error: err })
+
   }
 })
 
@@ -45,7 +48,8 @@ router.post('/', protect, async (req: AuthRequest, res) => {
     })
     res.status(201).json(problem)
   } catch {
-    res.status(500).json({ message: 'Server error' })
+    console.error(err)
+    res.status(500).json({ message: 'Server error', error: err })
   }
 })
 
