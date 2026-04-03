@@ -19,7 +19,7 @@ router.get('/:id/public', async (req, res) => {
       return
     }
     res.json(problem)
-  } catch {
+  } catch (err) {
     console.error(err)
     res.status(500).json({ message: 'Server error', error: err })
   }
@@ -30,7 +30,7 @@ router.get('/', protect, async (req: AuthRequest, res) => {
   try {
     const problems = await Problem.find({ adminId: req.adminId })
     res.json(problems)
-  } catch {
+  } catch (err) {
     console.error(err)
     res.status(500).json({ message: 'Server error', error: err })
 
@@ -47,7 +47,7 @@ router.post('/', protect, async (req: AuthRequest, res) => {
       code
     })
     res.status(201).json(problem)
-  } catch {
+  } catch (err) {
     console.error(err)
     res.status(500).json({ message: 'Server error', error: err })
   }
@@ -66,8 +66,9 @@ router.put('/:id', protect, async (req: AuthRequest, res) => {
       return
     }
     res.json(problem)
-  } catch {
-    res.status(500).json({ message: 'Server error' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Server error', error: err })
   }
 })
 
@@ -83,8 +84,9 @@ router.delete('/:id', protect, async (req: AuthRequest, res) => {
       return
     }
     res.json({ success: true })
-  } catch {
-    res.status(500).json({ message: 'Server error' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Server error', error: err })
   }
 })
 
