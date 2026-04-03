@@ -1,4 +1,5 @@
-export const API_URL = 'http://localhost:4000'
+const ENV = import.meta.env.VITE_TAURI_ENV;
+export const API_URL = ENV === "CLOUD" ? import.meta.env.VITE_TAURI_BACKEND_URL_CLOUD : import.meta.env.VITE_TAURI_BACKEND_URL_LOCAL;
 
 // ─── Contest lookup ───────────────────────────────────────────────────────────
 
@@ -130,4 +131,4 @@ export const apiGetProblem = async (problemId: string): Promise<Challenge> => {
     outputFormat: data.outputFormat,
     constraints: data.constraints,
   }
-}
+}

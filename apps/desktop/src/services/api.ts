@@ -1,5 +1,8 @@
 import { invoke } from "@tauri-apps/api/tauri";
 
+const ENV = import.meta.env.TAURI_ENV;
+const API_URL = ENV === "CLOUD" ? import.meta.env.TAURI_BACKEND_URL_CLOUD : import.meta.env.TAURI_BACKEND_URL_LOCAL;
+
 export interface CompilerResponse {
     output: string;
     hasError: boolean;

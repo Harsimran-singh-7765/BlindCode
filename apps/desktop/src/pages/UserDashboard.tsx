@@ -18,7 +18,7 @@ export default function UserDashboard({ onContestJoined }: UserDashboardProps) {
   const [participantId, setParticipantId] = useState("");
   const [initScore, setInitScore] = useState(0);
   const [initSolved, setInitSolved] = useState<string[]>([]);
-  
+
   const [contest, setContest] = useState<ContestInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,7 +42,7 @@ export default function UserDashboard({ onContestJoined }: UserDashboardProps) {
           if (pollRef.current) clearInterval(pollRef.current);
           onContestJoined(contest._id, teamName, password, contest, participantId, initScore, initSolved);
         }
-      } catch {}
+      } catch { }
     };
 
     poll();
@@ -68,17 +68,14 @@ export default function UserDashboard({ onContestJoined }: UserDashboardProps) {
         return;
       }
       setContest(data);
-      
       // Attempt to join the contest with team credentials
       const joinData = await apiJoinContest(code, teamName, password);
       const joinedParticipantId = joinData.participantId;
       const score = joinData.score || 0;
       const solvedIds = joinData.solvedProblemIds || [];
-      
       setParticipantId(joinedParticipantId);
       setInitScore(score);
       setInitSolved(solvedIds);
-      
       if (data.status === ContestStatus.RUNNING) {
         onContestJoined(data._id, teamName, password, data, joinedParticipantId, score, solvedIds);
       } else {
