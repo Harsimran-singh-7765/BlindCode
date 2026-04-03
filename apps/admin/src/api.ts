@@ -1,11 +1,3 @@
-// export const API_URL = 'http://localhost:4000'
-
-// export const authHeader = () => ({
-//   'Content-Type': 'application/json',
-//   'Authorization': `Bearer ${localStorage.getItem('bc_admin_token')}`
-// })
-
-
 export const API_URL = 'http://localhost:4000'
 
 export const authHeader = () => ({

@@ -2,7 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import Papa from 'papaparse'
 import './ContestLobby.css'
-import { apiGetContest, apiGetParticipants, apiAddParticipant, apiStartContest } from '../api'
+import {
+  apiGetContest,
+  apiGetParticipants,
+  apiAddParticipant,
+  apiStartContest,
+  apiAddParticipantsBulk
+} from '../api'
 
 export const ParticipantStatus = {
   Unjoined: 'unjoined',
@@ -174,7 +180,6 @@ export default function ContestLobby() {
 
         if (validTeams.length > 0) {
           try {
-            const { apiAddParticipantsBulk } = await import('../api')
             const response = await apiAddParticipantsBulk(contestId!, validTeams)
 
             if (response.failed && Array.isArray(response.failed)) {
