@@ -1,6 +1,8 @@
 
-const ENV = import.meta.env.TAURI_ENV;
-const API_URL = ENV === "CLOUD" ? import.meta.env.TAURI_BACKEND_URL_CLOUD : import.meta.env.TAURI_BACKEND_URL_LOCAL;
+const ENV = import.meta.env.VITE_TAURI_ENV;
+const API_URL = ENV === "CLOUD" ? import.meta.env.VITE_TAURI_BACKEND_URL_CLOUD : import.meta.env.VITE_TAURI_BACKEND_URL_LOCAL;
+
+const CODE_EXEC_URL = import.meta.env.VITE_TAURI_CODE_EXEC_URL;
 
 export interface CompilerResponse {
     output: string;
@@ -31,7 +33,7 @@ export async function compileCode(code: string, language: string, input: string 
     const version = versionMap[pistonLang] || "1.0.0";
 
     try {
-        const response = await fetch("http://13.206.10.105:2000/api/v2/execute", {
+        const response = await fetch(CODE_EXEC_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -78,25 +80,26 @@ export async function compileCode(code: string, language: string, input: string 
             hasError: false
         };
     } catch (error) {
-        console.error("Compilation failed:", error);
+        console.error(`Compilation failed at ${CODE_EXEC_URL}:`, error);
         return {
             output: "",
             hasError: true,
-            error: error instanceof Error ? error.message : String(error),
+            error: error instanceof Error ? `${error.message} (${CODE_EXEC_URL})` : `Failed to fetch from ${CODE_EXEC_URL}`,
         };
     }
 }
 
 export const apiGetLeaderboard = async (contestCode: string) => {
+    const url = `${API_URL}/api/contests/${contestCode}/leaderboard`;
     try {
-        const response = await fetch(`${API_URL}/api/contests/${contestCode}/leaderboard`);
+        const response = await fetch(url);
         if (!response.ok) {
-            throw new Error("Failed to fetch leaderboard");
+            throw new Error(`Failed to fetch leaderboard from ${url}`);
         }
         const data = await response.json();
         return data; // Returns array of participants sorted by score
     } catch (error) {
         console.error("Leaderboard fetch error:", error);
-        return [];
+        throw error; // Let the caller handle and log it to addLog
     }
 };
