@@ -3,7 +3,7 @@ import Editor from "./components/Editor";
 import Terminal from "./components/Terminal";
 import ProblemSidebar, { type SubmissionData, type LeaderboardParticipant } from "./components/ProblemSidebar";
 import Leaderboard from "./components/Leaderboard";
-import { LogOut, Trophy, Target, Clock, Zap, Loader2, Award, AlertTriangle } from "lucide-react";
+import { Trophy, Target, Clock, Zap, Loader2, Award, AlertTriangle } from "lucide-react";
 import { appWindow } from "@tauri-apps/api/window";
 import { exit } from "@tauri-apps/api/process";
 import type { Challenge } from "./data/questions";
