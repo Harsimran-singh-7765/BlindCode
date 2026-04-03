@@ -18,7 +18,7 @@ export const initSocket = (httpServer: HttpServer) => {
     console.log('Socket connected:', socket.id);
 
 
-    cd
+
     // ✨ BULLETPROOF SOCKET: Admin directly ends contest (No Race Conditions)
     socket.on('admin_end_contest', async ({ contestId }) => {
       console.log(`🔥 ADMIN COMMAND: Force ending contest -> ${contestId}`);
