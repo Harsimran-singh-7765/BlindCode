@@ -37,7 +37,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.blindcode",
+      "identifier": "com.blindcode.app",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
