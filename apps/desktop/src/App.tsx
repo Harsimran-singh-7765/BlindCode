@@ -925,13 +925,13 @@ function ContestApp({
                             </div>
                         </div>
 
-                        <button
+                        {/* <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 px-5 py-3 bg-red-600/20 hover:bg-red-600/30 border border-red-600/40 text-red-400 rounded-xl transition-all text-base font-semibold"
                         >
                             <LogOut size={18} />
                             <span>Quit</span>
-                        </button>
+                        </button> */}
                     </div>
                 </div>
 
